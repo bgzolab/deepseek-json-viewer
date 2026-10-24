@@ -136,15 +136,6 @@ a:hover {
   background: var(--brand-hover);
 }
 
-.btn-soft {
-  background: var(--brand-soft);
-  color: var(--brand);
-}
-
-.btn-soft:hover:not(:disabled) {
-  background: var(--brand-soft-strong);
-}
-
 .btn-ghost {
   background: transparent;
   color: var(--text-secondary);
@@ -162,24 +153,6 @@ a:hover {
 
 .btn-danger:hover:not(:disabled) {
   background: var(--danger-hover);
-}
-
-.btn-outline {
-  border-color: var(--border);
-  background: var(--bg-surface);
-  color: var(--text);
-}
-
-.btn-outline:hover:not(:disabled) {
-  border-color: var(--border-strong);
-  background: var(--bg-muted);
-}
-
-.btn-sm {
-  min-height: 32px;
-  padding: 0 11px;
-  border-radius: 8px;
-  font-size: 13px;
 }
 
 .icon-button {
@@ -231,19 +204,6 @@ mark.text-hit {
 @keyframes spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-.fade-in {
-  animation: fade-in 180ms ease both;
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
   }
 }
 

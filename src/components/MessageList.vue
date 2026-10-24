@@ -155,7 +155,7 @@ defineExpose({ scrollToBottom, focusMatch })
             class="load-earlier"
             @click="loadEarlier"
           >
-            加载更早的 {{ Math.min(hiddenCount, 80) }} 条消息
+            加载更早的 {{ Math.min(hiddenCount, LOAD_CHUNK) }} 条消息
           </button>
 
           <MessageItem

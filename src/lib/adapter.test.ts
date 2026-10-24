@@ -112,6 +112,51 @@ describe('parseExport', () => {
     expect(references?.[3]?.url).toBe('https://example.com/fourth')
   })
 
+  it('derives date bounds from message timestamps regardless of array direction', () => {
+    const conversation = firstConversation({
+      id: 'newest-first',
+      title: 'Newest first',
+      messages: [
+        {
+          id: 'm3',
+          role: 'user',
+          content: 'newest',
+          created_at: '2026-01-04T00:00:00.000Z',
+        },
+        {
+          id: 'm2',
+          role: 'assistant',
+          content: 'middle',
+          created_at: '2026-01-03T00:00:00.000Z',
+        },
+        {
+          id: 'm1',
+          role: 'user',
+          content: 'oldest',
+          created_at: '2026-01-02T00:00:00.000Z',
+        },
+      ],
+    })
+
+    expect(conversation.createdAt).toBe('2026-01-02T00:00:00.000Z')
+    expect(conversation.updatedAt).toBe('2026-01-04T00:00:00.000Z')
+  })
+
+  it('strips both reference marker forms from fallback titles', () => {
+    const conversation = firstConversation({
+      id: 'title-reference',
+      messages: [
+        {
+          id: 'a1',
+          role: 'assistant',
+          content: '看这个结果[reference:0]和这个[!reference:1]很相关',
+        },
+      ],
+    })
+
+    expect(conversation.title).not.toContain('reference')
+  })
+
   it('respects current_node when it is present', () => {
     const root = {
       id: 'current-node',

@@ -6,7 +6,7 @@ import type {
   Conversation,
 } from '../types/chat'
 import { fingerprintConversation, fingerprintMessage, normalizeText } from './hash'
-import { parseTimestamp } from './time'
+import { parseTimestamp, toTime } from './time'
 
 type JsonRecord = Record<string, unknown>
 
@@ -561,13 +561,31 @@ function fallbackTitle(messages: ChatMessage[]): string {
   const content = first?.content ?? messages.find((message) => message.content.trim())?.content ?? ''
   const plain = normalizeText(content)
     .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/\[!?reference:\d+\]/g, ' ')
     .replace(/[#>*_`~[\]]/g, ' ')
-    .replace(/\[!reference:\d+\]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 
   if (!plain) return '未命名会话'
   return plain.length > 48 ? `${plain.slice(0, 48)}…` : plain
+}
+
+function messageDateBounds(messages: ChatMessage[]): {
+  earliest?: string
+  latest?: string
+} {
+  let earliest: { value: string; time: number } | null = null
+  let latest: { value: string; time: number } | null = null
+
+  for (const message of messages) {
+    if (!message.createdAt) continue
+    const time = toTime(message.createdAt)
+    if (time === null) continue
+    if (!earliest || time < earliest.time) earliest = { value: message.createdAt, time }
+    if (!latest || time > latest.time) latest = { value: message.createdAt, time }
+  }
+
+  return { earliest: earliest?.value, latest: latest?.value }
 }
 
 function normalizeConversation(
@@ -607,11 +625,9 @@ function normalizeConversation(
   const messages = dedupeMessages(normalizedMessages, warning)
   const explicitTitle = coerceString(firstDefined(raw, TITLE_KEYS)).trim()
   const title = explicitTitle || fallbackTitle(messages)
-  const createdAt =
-    parseTimestamp(firstDefined(raw, CREATED_KEYS)) ?? messages.find((message) => message.createdAt)?.createdAt
-  const updatedAt =
-    parseTimestamp(firstDefined(raw, UPDATED_KEYS)) ??
-    [...messages].reverse().find((message) => message.createdAt)?.createdAt
+  const messageDates = messageDateBounds(messages)
+  const createdAt = parseTimestamp(firstDefined(raw, CREATED_KEYS)) ?? messageDates.earliest
+  const updatedAt = parseTimestamp(firstDefined(raw, UPDATED_KEYS)) ?? messageDates.latest
   const explicitModel = coerceString(firstDefined(raw, MODEL_KEYS)).trim()
   const messageModel = messageRecords
     .map((item) => (isRecord(item.message) ? coerceString(firstDefined(item.message, MODEL_KEYS)).trim() : ''))
