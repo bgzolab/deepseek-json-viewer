@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { StoredConversation } from '../types/chat'
 import { avatarUrl } from '../lib/assets'
 import { relativeGroup } from '../lib/time'
@@ -90,6 +90,15 @@ function onGlobalKeydown(event: KeyboardEvent): void {
     void focusSearch()
   }
 }
+
+watch(
+  () => store.state.query,
+  (query) => {
+    if (query) return
+    if (searchInput.value === document.activeElement) return
+    searchOpen.value = false
+  },
+)
 
 onMounted(() => document.addEventListener('keydown', onGlobalKeydown))
 onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
