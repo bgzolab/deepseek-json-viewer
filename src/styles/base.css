@@ -211,16 +211,6 @@ a:hover {
   border-radius: 7px;
 }
 
-kbd {
-  padding: 1px 5px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg-muted);
-  color: var(--text-caption);
-  font-family: var(--font-sans);
-  font-size: 10px;
-}
-
 mark.text-hit {
   padding: 0 1px;
   border-radius: 3px;

@@ -45,12 +45,7 @@
 
   --user-bubble: #edf3fe;
 
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.08);
-
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
 
   --sidebar-width: 260px;
   --header-height: 60px;
@@ -60,5 +55,4 @@
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --transition-fast: 140ms ease;
-  --transition-base: 200ms ease;
 }

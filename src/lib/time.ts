@@ -111,21 +111,6 @@ function compactTimestamp(timestamp: number): string {
   return yearMonthDayFormat.format(date)
 }
 
-export function formatRelativeTime(value: string | undefined): string {
-  const timestamp = toTime(value)
-  if (timestamp === null) return '时间未知'
-
-  const date = new Date(timestamp)
-  const days = dayDifference(timestamp)
-
-  if (days === 0) return `今天 ${timeFormat.format(date)}`
-  if (days === 1) return `昨天 ${timeFormat.format(date)}`
-  if (date.getFullYear() === new Date().getFullYear()) {
-    return `${monthDayFormat.format(date)} ${timeFormat.format(date)}`
-  }
-  return `${date.getFullYear()}年${monthDayFormat.format(date)}`
-}
-
 export function formatDateTime(value: string | undefined): string {
   const timestamp = toTime(value)
   if (timestamp === null) return '—'

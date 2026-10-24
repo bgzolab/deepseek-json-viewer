@@ -85,10 +85,14 @@ function openFilePicker(): void {
   fileInput.value?.click()
 }
 
+function hasOpenDialog(): boolean {
+  return reportOpen.value || confirmState.open || store.state.importing
+}
+
 async function runImport(files: File[]): Promise<void> {
   if (files.length === 0) return
-  if (store.state.importing) {
-    showNotice('已有导入任务正在进行，请稍候。', 'info')
+  if (hasOpenDialog()) {
+    showNotice('请先关闭当前对话框。', 'info')
     return
   }
 
@@ -111,6 +115,7 @@ function hasDraggedFiles(event: DragEvent): boolean {
 function onDragEnter(event: DragEvent): void {
   if (!hasDraggedFiles(event)) return
   event.preventDefault()
+  if (hasOpenDialog()) return
   dragDepth += 1
   isDragging.value = true
 }
@@ -118,6 +123,7 @@ function onDragEnter(event: DragEvent): void {
 function onDragOver(event: DragEvent): void {
   if (!hasDraggedFiles(event)) return
   event.preventDefault()
+  if (hasOpenDialog()) return
   if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy'
 }
 
@@ -138,6 +144,7 @@ function onDrop(event: DragEvent): void {
   event.preventDefault()
   dragDepth = 0
   isDragging.value = false
+  if (hasOpenDialog()) return
   const files = Array.from(event.dataTransfer?.files ?? [])
   void runImport(files)
 }
