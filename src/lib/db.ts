@@ -25,6 +25,10 @@ function getDatabase(): Promise<IDBPDatabase<ViewerDatabase>> {
           database.createObjectStore(STORE_NAME, { keyPath: 'id' })
         }
       },
+    }).catch((error: unknown) => {
+      // Do not pin a failed open for the rest of the session; allow a retry.
+      databasePromise = null
+      throw error
     })
   }
   return databasePromise

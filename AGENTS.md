@@ -52,6 +52,11 @@
 - The brand source is `assets/deepseek-gril-profile.png`. The full-resolution alpha master is `assets/deepseek-gril-profile-transparent.png`; `assets/deepseek-gril-profile-logo.webp` is the README derivative. App avatar/hero derivatives live under `public/`. Regenerate transparency with ImageMagick: `magick <source> -alpha on -fuzz 16% -transparent black <out.png>`. Do not replace these with remote art.
 - Responsive behavior: sidebar becomes a drawer at 860px; additional mobile tweaks apply at 640px. Verify both after UI changes.
 
+## Known deferred edge cases
+
+- Search occurrence counts come from raw Markdown while `<mark>` indexes come from rendered/sanitized text. Queries consisting of Markdown syntax or spanning stripped markup can overcount; message-level scroll fallback prevents breakage. Fixing this properly requires making rendered text the search-index source.
+- Messages with neither an ID nor a timestamp are intentionally deduplicated by `role + content` fingerprint per the existing contract. Legitimate identical messages in such minimal exports can collapse; changing this needs a product decision about cross-import merge semantics.
+
 ## Tests and manual verification
 
 - Unit tests cover the parser/adapter, merge/dedupe, hash, and search only (`src/lib/*.test.ts`). There is no DOM, IndexedDB, worker, or service-worker test suite.

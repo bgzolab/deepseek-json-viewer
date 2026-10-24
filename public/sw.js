@@ -1,4 +1,4 @@
-const CACHE_NAME = 'deepseek-json-viewer-shell-v2'
+const CACHE_NAME = 'deepseek-json-viewer-shell-v3'
 const INDEX_URL = new URL('index.html', self.registration.scope).toString()
 const ROOT_URL = self.registration.scope
 
@@ -35,22 +35,18 @@ async function precacheAppShell() {
 
   await Promise.all(
     [...assetUrls].map(async (url) => {
-      try {
-        const response = await fetch(url, { cache: 'reload' })
-        if (response.ok) await cache.put(url, response)
-      } catch {
-        // A single optional asset should not block the service worker install.
+      const response = await fetch(url, { cache: 'reload' })
+      if (!response.ok) {
+        throw new Error(`Unable to precache ${url}: ${response.status}`)
       }
+      await cache.put(url, response)
     }),
   )
 }
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    precacheAppShell()
-      .catch(() => undefined)
-      .then(() => self.skipWaiting()),
-  )
+  // A failed precache must not activate a partial cache and delete the last good one.
+  event.waitUntil(precacheAppShell().then(() => self.skipWaiting()))
 })
 
 self.addEventListener('activate', (event) => {

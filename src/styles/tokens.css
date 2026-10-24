@@ -63,6 +63,7 @@
   --sidebar-width: 260px;
   --header-height: 60px;
   --content-width: 752px;
+  --content-gutter: 20px;
   --composer-width: 776px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);

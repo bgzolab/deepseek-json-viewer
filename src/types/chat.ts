@@ -21,7 +21,6 @@ export interface ChatMessage {
   references?: ChatReference[]
   /** File attachments are represented by metadata only; the files never leave the device. */
   attachments?: ChatAttachment[]
-  raw?: unknown
 }
 
 export interface Conversation {

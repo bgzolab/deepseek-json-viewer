@@ -205,10 +205,10 @@ defineExpose({ scrollToBottom, focusMatch })
 
 .message-stream {
   width: 100%;
-  max-width: 792px;
+  max-width: calc(var(--content-width) + var(--content-gutter) * 2);
   min-height: 100%;
   margin: 0 auto;
-  padding: 34px 20px 28px;
+  padding: 34px var(--content-gutter) 28px;
 }
 
 .load-earlier {
@@ -251,7 +251,10 @@ defineExpose({ scrollToBottom, focusMatch })
 
 .scroll-bottom {
   position: absolute;
-  right: max(20px, calc((100% - 792px) / 2 + 20px));
+  right: max(
+    var(--content-gutter),
+    calc((100% - var(--content-width) - var(--content-gutter) * 2) / 2 + var(--content-gutter))
+  );
   bottom: 18px;
   z-index: 4;
   display: flex;

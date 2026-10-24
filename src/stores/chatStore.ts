@@ -56,7 +56,6 @@ const state = reactive({
     total: 0,
     message: '',
   } as ImportProgress,
-  clearing: false,
 })
 
 const searchIndexes = new Map<string, ConversationSearchIndex>()
@@ -481,7 +480,14 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
   return report
 }
 
+function ensureNotImporting(): void {
+  if (state.importing) {
+    throw new Error('导入正在进行，请稍后再操作。')
+  }
+}
+
 export async function deleteConversation(id: string): Promise<void> {
+  ensureNotImporting()
   await deleteConversationRecord(id)
   searchIndexes.delete(id)
   indexVersion.value += 1
@@ -495,20 +501,16 @@ export async function deleteConversation(id: string): Promise<void> {
 }
 
 export async function clearAllData(): Promise<void> {
-  state.clearing = true
-  try {
-    await clearConversationRecords()
-    state.conversations = []
-    state.selectedId = null
-    state.query = ''
-    state.activeMatch = 0
-    state.focusToken += 1
-    searchIndexes.clear()
-    indexVersion.value += 1
-    persistSelection()
-  } finally {
-    state.clearing = false
-  }
+  ensureNotImporting()
+  await clearConversationRecords()
+  state.conversations = []
+  state.selectedId = null
+  state.query = ''
+  state.activeMatch = 0
+  state.focusToken += 1
+  searchIndexes.clear()
+  indexVersion.value += 1
+  persistSelection()
 }
 
 function clampActiveMatch(): void {

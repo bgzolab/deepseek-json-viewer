@@ -18,10 +18,11 @@ const props = withDefaults(
   },
 )
 
+const baseHtml = computed(() => renderMarkdown(props.text, props.references))
+
 const html = computed(() => {
-  const rendered = renderMarkdown(props.text, props.references)
-  if (!props.query) return rendered
-  return highlightSearchInHtml(rendered, props.query, props.searchStartIndex).html
+  if (!props.query) return baseHtml.value
+  return highlightSearchInHtml(baseHtml.value, props.query, props.searchStartIndex).html
 })
 
 async function onClick(event: MouseEvent): Promise<void> {

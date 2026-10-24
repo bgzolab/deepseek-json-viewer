@@ -63,26 +63,75 @@ marked.setOptions({
   renderer,
 })
 
-function applyReferences(markdown: string, references?: ChatReference[]): string {
-  if (!markdown.includes('reference:')) return markdown
+const REFERENCE_MARKER = /\[!?reference:(\d+)\]/g
+const SKIPPED_REFERENCE_TAGS = new Set(['A', 'CODE', 'PRE', 'SCRIPT', 'STYLE'])
 
-  return markdown.replace(/\[!?reference:(\d+)\]/g, (_match, rawIndex: string) => {
-    const index = Number(rawIndex)
-    const reference = references?.[index]
-    const url = reference ? safeHttpUrl(reference.url) : null
-    if (!reference || !url) return ''
+function applyReferencesToHtml(html: string, references?: ChatReference[]): string {
+  if (!html.includes('reference:')) return html
+  if (typeof document === 'undefined') return html
 
-    return `<a class="md-citation" href="${escapeAttribute(url)}" title="${escapeAttribute(
-      reference.title,
-    )}" target="_blank" rel="noopener noreferrer nofollow">${index + 1}</a>`
-  })
+  const doc = document.implementation.createHTMLDocument('')
+  doc.body.innerHTML = html
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT)
+  const textNodes: Text[] = []
+
+  let node = walker.nextNode()
+  while (node) {
+    const parent = node.parentElement
+    if (
+      parent &&
+      !SKIPPED_REFERENCE_TAGS.has(parent.tagName) &&
+      !parent.closest('a, code, pre')
+    ) {
+      textNodes.push(node as Text)
+    }
+    node = walker.nextNode()
+  }
+
+  for (const textNode of textNodes) {
+    const text = textNode.nodeValue ?? ''
+    REFERENCE_MARKER.lastIndex = 0
+    let match = REFERENCE_MARKER.exec(text)
+    if (!match) continue
+
+    const fragment = doc.createDocumentFragment()
+    let cursor = 0
+
+    while (match) {
+      if (match.index > cursor) {
+        fragment.appendChild(doc.createTextNode(text.slice(cursor, match.index)))
+      }
+
+      const index = Number(match[1])
+      const reference = references?.[index]
+      const url = reference ? safeHttpUrl(reference.url) : null
+      if (reference && url) {
+        const anchor = doc.createElement('a')
+        anchor.className = 'md-citation'
+        anchor.href = url
+        anchor.title = reference.title
+        anchor.target = '_blank'
+        anchor.rel = 'noopener noreferrer nofollow'
+        anchor.textContent = String(index + 1)
+        fragment.appendChild(anchor)
+      }
+
+      cursor = match.index + match[0].length
+      match = REFERENCE_MARKER.exec(text)
+    }
+
+    if (cursor < text.length) {
+      fragment.appendChild(doc.createTextNode(text.slice(cursor)))
+    }
+    textNode.parentNode?.replaceChild(fragment, textNode)
+  }
+
+  return doc.body.innerHTML
 }
 
 export function renderMarkdown(markdown: string, references?: ChatReference[]): string {
-  const source = applyReferences(markdown, references)
-  const rawHtml = marked.parse(source, { async: false }) as string
-
-  return DOMPurify.sanitize(rawHtml, {
+  const rawHtml = marked.parse(markdown, { async: false }) as string
+  const sanitized = DOMPurify.sanitize(rawHtml, {
     USE_PROFILES: { html: true },
     ADD_ATTR: ['target', 'data-copy-code'],
     FORBID_TAGS: [
@@ -104,6 +153,8 @@ export function renderMarkdown(markdown: string, references?: ChatReference[]): 
     ],
     FORBID_ATTR: ['style', 'srcset'],
   })
+
+  return applyReferencesToHtml(sanitized, references)
 }
 
 function escapeRegExp(value: string): string {
