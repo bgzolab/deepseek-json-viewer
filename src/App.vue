@@ -91,7 +91,11 @@ function hasOpenDialog(): boolean {
 
 async function runImport(files: File[]): Promise<void> {
   if (files.length === 0) return
-  if (hasOpenDialog()) {
+  if (store.state.importing) {
+    showNotice('导入正在进行，请稍候。', 'info')
+    return
+  }
+  if (reportOpen.value || confirmState.open) {
     showNotice('请先关闭当前对话框。', 'info')
     return
   }

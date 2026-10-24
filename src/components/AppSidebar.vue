@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { StoredConversation } from '../types/chat'
 import { avatarUrl } from '../lib/assets'
+import { hasActiveModal } from '../lib/modalStack'
 import { relativeGroup } from '../lib/time'
 import { useChatStore } from '../stores/chatStore'
 import AppIcon from './AppIcon.vue'
@@ -79,6 +80,7 @@ function onSearchKeydown(event: KeyboardEvent): void {
 }
 
 async function focusSearch(): Promise<void> {
+  if (hasActiveModal()) return
   if (window.matchMedia('(max-width: 860px)').matches) {
     store.setMobileSidebarOpen(true)
   } else if (store.state.sidebarCollapsed) {
@@ -91,6 +93,7 @@ async function focusSearch(): Promise<void> {
 }
 
 function onGlobalKeydown(event: KeyboardEvent): void {
+  if (hasActiveModal()) return
   if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
     event.preventDefault()
     void focusSearch()

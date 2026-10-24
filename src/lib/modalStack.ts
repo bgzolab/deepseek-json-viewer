@@ -7,6 +7,10 @@ function applyInert(): void {
   app.toggleAttribute('inert', activeModalCount > 0)
 }
 
+export function hasActiveModal(): boolean {
+  return activeModalCount > 0
+}
+
 export function acquireModalInert(): void {
   activeModalCount += 1
   applyInert()
