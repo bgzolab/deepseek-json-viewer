@@ -49,7 +49,7 @@
 - `data/raw/` is ignored. Never commit real chat exports.
 - UI convention: intentionally mirrors the DeepSeek web chat. Preserve the layout tokens (260px sidebar, 60px header, 752px thread, 776px composer), colors in `src/styles/tokens.css`, and inline SVG icons via `AppIcon.vue`. Avoid reintroducing gradients, glows, or marketing-style cards.
 - Search is intentionally hidden behind the sidebar search icon / `Cmd/Ctrl+K`, matching the reference UI.
-- The avatar/hero source is `assets/deepseek-gril-profile.png`; optimized derivatives are committed under `public/`. Do not replace them with remote art.
+- The brand source is `assets/deepseek-gril-profile.png`. The full-resolution alpha master is `assets/deepseek-gril-profile-transparent.png`; `assets/deepseek-gril-profile-logo.webp` is the README derivative. App avatar/hero derivatives live under `public/`. Regenerate transparency with ImageMagick: `magick <source> -alpha on -fuzz 16% -transparent black <out.png>`. Do not replace these with remote art.
 - Responsive behavior: sidebar becomes a drawer at 860px; additional mobile tweaks apply at 640px. Verify both after UI changes.
 
 ## Tests and manual verification

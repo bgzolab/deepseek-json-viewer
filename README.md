@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/deepseek-gril-profile-logo.webp" width="180" alt="DeepSeek JSON Viewer logo" />
+</p>
+
 # DeepSeek JSON Viewer
 
 A local-first, browser-only viewer for DeepSeek chat exports. Import one or more JSON files and browse, search, and organize them without sending chat data anywhere.
