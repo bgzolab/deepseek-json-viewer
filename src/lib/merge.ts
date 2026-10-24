@@ -6,7 +6,6 @@ export interface MergeOutcome {
   conversation: StoredConversation
   addedMessages: number
   changed: boolean
-  duplicate: boolean
 }
 
 export function messageIdentity(message: ChatMessage): string {
@@ -186,7 +185,6 @@ export function mergeConversations(
     conversation: merged,
     addedMessages: added,
     changed,
-    duplicate: true,
   }
 }
 

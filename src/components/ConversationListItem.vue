@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { StoredConversation } from '../types/chat'
-import { lastMessageTime, toTime } from '../lib/time'
+import { compactConversationDate } from '../lib/time'
 import AppIcon from './AppIcon.vue'
 import HighlightText from './HighlightText.vue'
 
@@ -10,6 +10,7 @@ const props = defineProps<{
   active: boolean
   query: string
   matchCount: number
+  titleMatchCount?: number
 }>()
 
 const emit = defineEmits<{
@@ -19,40 +20,20 @@ const emit = defineEmits<{
 
 const title = computed(() => props.conversation.title || '未命名会话')
 
-const dateLabel = computed(() => {
-  const updated = toTime(props.conversation.updatedAt)
-  const created = toTime(props.conversation.createdAt)
-  const last = lastMessageTime(props.conversation)
-  const timestamp = updated ?? last ?? created
-  if (timestamp === null) return ''
-
-  const date = new Date(timestamp)
-  const now = new Date()
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
-  const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
-  const days = Math.round((startOfToday - startOfDate) / 86_400_000)
-
-  if (days === 0) {
-    return new Intl.DateTimeFormat('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).format(date)
-  }
-  if (days === 1) return '昨天'
-  if (date.getFullYear() === now.getFullYear()) {
-    return `${date.getMonth() + 1}/${date.getDate()}`
-  }
-  return `${date.getFullYear()}/${date.getMonth() + 1}`
-})
+const dateLabel = computed(() => compactConversationDate(props.conversation))
 
 const metaLabel = computed(() => {
   if (props.matchCount > 0) return `${props.matchCount} 处`
+  if ((props.titleMatchCount ?? 0) > 0) return '标题匹配'
   const parts: string[] = []
   if (dateLabel.value) parts.push(dateLabel.value)
   parts.push(`${props.conversation.messages.length} 条`)
   return parts.join(' · ')
 })
+
+const hasMatch = computed(
+  () => props.matchCount > 0 || (props.titleMatchCount ?? 0) > 0,
+)
 </script>
 
 <template>
@@ -66,7 +47,7 @@ const metaLabel = computed(() => {
       <span class="item-title">
         <HighlightText :text="title" :query="query" />
       </span>
-      <span class="item-meta" :class="{ 'is-match': matchCount > 0 }">{{ metaLabel }}</span>
+      <span class="item-meta" :class="{ 'is-match': hasMatch }">{{ metaLabel }}</span>
     </button>
 
     <button

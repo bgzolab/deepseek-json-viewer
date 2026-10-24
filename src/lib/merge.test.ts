@@ -44,7 +44,6 @@ describe('mergeConversations', () => {
 
     const outcome = mergeConversations(existing, incoming, 2, 2)
     expect(outcome.addedMessages).toBe(2)
-    expect(outcome.duplicate).toBe(true)
     expect(outcome.conversation.title).toBe('新标题')
     expect(outcome.conversation.messages.map((message) => message.id)).toEqual([
       'm1',

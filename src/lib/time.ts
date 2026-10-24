@@ -76,6 +76,12 @@ const monthDayFormat = new Intl.DateTimeFormat('zh-CN', {
   day: 'numeric',
 })
 
+const yearMonthDayFormat = new Intl.DateTimeFormat('zh-CN', {
+  year: 'numeric',
+  month: 'numeric',
+  day: 'numeric',
+})
+
 const fullDateFormat = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric',
   month: '2-digit',
@@ -89,17 +95,32 @@ function startOfDay(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
 }
 
+function dayDifference(timestamp: number): number {
+  return Math.round((startOfDay(new Date()) - startOfDay(new Date(timestamp))) / 86_400_000)
+}
+
+function compactTimestamp(timestamp: number): string {
+  const date = new Date(timestamp)
+  const days = dayDifference(timestamp)
+
+  if (days === 0) return timeFormat.format(date)
+  if (days === 1) return '昨天'
+  if (date.getFullYear() === new Date().getFullYear()) {
+    return monthDayFormat.format(date)
+  }
+  return yearMonthDayFormat.format(date)
+}
+
 export function formatRelativeTime(value: string | undefined): string {
   const timestamp = toTime(value)
   if (timestamp === null) return '时间未知'
 
   const date = new Date(timestamp)
-  const now = new Date()
-  const dayDifference = Math.round((startOfDay(now) - startOfDay(date)) / 86_400_000)
+  const days = dayDifference(timestamp)
 
-  if (dayDifference === 0) return `今天 ${timeFormat.format(date)}`
-  if (dayDifference === 1) return `昨天 ${timeFormat.format(date)}`
-  if (date.getFullYear() === now.getFullYear()) {
+  if (days === 0) return `今天 ${timeFormat.format(date)}`
+  if (days === 1) return `昨天 ${timeFormat.format(date)}`
+  if (date.getFullYear() === new Date().getFullYear()) {
     return `${monthDayFormat.format(date)} ${timeFormat.format(date)}`
   }
   return `${date.getFullYear()}年${monthDayFormat.format(date)}`
@@ -123,18 +144,24 @@ export function conversationDateLabel(conversation: Conversation): string {
   return '时间未知'
 }
 
+export function compactConversationDate(conversation: Conversation): string {
+  const timestamp =
+    toTime(conversation.updatedAt) ??
+    lastMessageTime(conversation) ??
+    toTime(conversation.createdAt)
+  return timestamp === null ? '' : compactTimestamp(timestamp)
+}
+
 export function relativeGroup(conversation: Conversation): string {
   const base = conversation.updatedAt
     ? toTime(conversation.updatedAt)
     : lastMessageTime(conversation) ?? toTime(conversation.createdAt)
   if (base === null) return '更早'
 
-  const now = new Date()
-  const dayDifference = Math.round((startOfDay(now) - startOfDay(new Date(base))) / 86_400_000)
-
-  if (dayDifference <= 0) return '今天'
-  if (dayDifference === 1) return '昨天'
-  if (dayDifference <= 7) return '7 天内'
+  const days = dayDifference(base)
+  if (days <= 0) return '今天'
+  if (days === 1) return '昨天'
+  if (days <= 7) return '7 天内'
   return '更早'
 }
 

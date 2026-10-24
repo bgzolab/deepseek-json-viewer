@@ -37,10 +37,16 @@ const groups = computed<Array<{ label: string; items: StoredConversation[] }>>((
 })
 
 const resultCount = computed(() => store.searchResults.value.ordered.length)
-const matchCount = computed(() => store.searchResults.value.totalMatches)
+const messageMatchCount = computed(() =>
+  store.searchResults.value.ordered.reduce((total, result) => total + result.messageMatches, 0),
+)
 
-function matchCountFor(id: string): number {
-  return store.searchResults.value.map.get(id)?.totalMatches ?? 0
+function messageMatchCountFor(id: string): number {
+  return store.searchResults.value.map.get(id)?.messageMatches ?? 0
+}
+
+function titleMatchCountFor(id: string): number {
+  return store.searchResults.value.map.get(id)?.titleMatches ?? 0
 }
 
 function onQueryInput(event: Event): void {
@@ -177,7 +183,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
 
       <p v-if="store.normalizedQuery.value" class="search-summary">
         <template v-if="resultCount > 0">
-          {{ resultCount }} 个会话 · {{ matchCount }} 处匹配
+          {{ resultCount }} 个会话 · {{ messageMatchCount }} 处消息匹配
         </template>
         <template v-else>没有找到匹配内容</template>
       </p>
@@ -194,7 +200,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
               :conversation="conversation"
               :active="conversation.id === store.state.selectedId"
               :query="store.state.query.trim()"
-              :match-count="matchCountFor(conversation.id)"
+              :match-count="messageMatchCountFor(conversation.id)"
+              :title-match-count="titleMatchCountFor(conversation.id)"
               @select="store.selectConversation"
               @delete="emit('request-delete', $event)"
             />
