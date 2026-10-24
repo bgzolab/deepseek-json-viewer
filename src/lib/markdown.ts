@@ -57,6 +57,12 @@ renderer.image = ({ text }: Tokens.Image): string => {
   return `<span class="md-image-placeholder">图片已省略${text ? `：${escapeHtml(text)}` : ''}</span>`
 }
 
+renderer.checkbox = ({ checked }: Tokens.Checkbox): string => {
+  return `<span class="md-task-checkbox${checked ? ' is-checked' : ''}" role="img" aria-label="${
+    checked ? '已完成' : '未完成'
+  }"></span>`
+}
+
 marked.setOptions({
   gfm: true,
   breaks: true,

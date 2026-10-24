@@ -15,7 +15,6 @@ import {
 import { createStoredConversation, mergeConversations } from '../lib/merge'
 import { parseFile } from '../lib/parseFile'
 import {
-  buildMatchSegments,
   buildSearchIndex,
   messageIdAtMatch,
   messageMatchOffset,
@@ -130,10 +129,6 @@ const currentSearchResult = computed<ConversationSearchResult | null>(() => {
 })
 
 const currentMatchTotal = computed(() => currentSearchResult.value?.messageMatches ?? 0)
-
-const currentMatchSegments = computed(() =>
-  currentSearchResult.value ? buildMatchSegments(currentSearchResult.value) : [],
-)
 
 const activeMatchMessageId = computed(() =>
   messageIdAtMatch(currentSearchResult.value, state.activeMatch),
@@ -548,7 +543,6 @@ export function useChatStore() {
     searchResults,
     currentSearchResult,
     currentMatchTotal,
-    currentMatchSegments,
     activeMatchMessageId,
     messageMatchOffsets,
     totalMessages,

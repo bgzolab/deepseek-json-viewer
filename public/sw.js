@@ -1,4 +1,4 @@
-const CACHE_NAME = 'deepseek-json-viewer-shell-v3'
+const CACHE_NAME = 'deepseek-json-viewer-shell-v4'
 const INDEX_URL = new URL('index.html', self.registration.scope).toString()
 const ROOT_URL = self.registration.scope
 
@@ -32,6 +32,25 @@ async function precacheAppShell() {
   assetUrls.add(ROOT_URL)
   assetUrls.add(new URL('images/avatar.webp', self.registration.scope).toString())
   assetUrls.add(new URL('images/brand-hero.webp', self.registration.scope).toString())
+
+  // Vite references the worker chunk from the app bundle, not from index.html. Scan the
+  // JavaScript shell so a cold offline reload can still parse imports in the worker.
+  const workerPattern = /(?:[A-Za-z0-9_./-]*\/)?import\.worker-[A-Za-z0-9_-]+\.js/g
+  const jsUrls = [...assetUrls].filter((url) => new URL(url).pathname.endsWith('.js'))
+  for (const jsUrl of jsUrls) {
+    const response = await fetch(jsUrl, { cache: 'reload' })
+    if (!response.ok) {
+      throw new Error(`Unable to inspect ${jsUrl}: ${response.status}`)
+    }
+    const source = await response.text()
+    const matches = source.match(workerPattern) ?? []
+    for (const match of matches) {
+      const workerUrl = new URL(match, jsUrl)
+      if (workerUrl.origin === self.location.origin) {
+        assetUrls.add(workerUrl.toString())
+      }
+    }
+  }
 
   await Promise.all(
     [...assetUrls].map(async (url) => {

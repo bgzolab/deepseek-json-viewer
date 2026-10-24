@@ -264,8 +264,31 @@
   list-style: none;
 }
 
-.markdown-body .task-list-item input {
+.markdown-body .md-task-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
   margin-right: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  background: var(--bg-surface);
+  vertical-align: -2px;
+}
+
+.markdown-body .md-task-checkbox.is-checked {
+  border-color: var(--brand);
+  background: var(--brand);
+}
+
+.markdown-body .md-task-checkbox.is-checked::after {
+  width: 3px;
+  height: 7px;
+  border: solid white;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg) translateY(-1px);
+  content: '';
 }
 
 .markdown-body .md-search-hit {

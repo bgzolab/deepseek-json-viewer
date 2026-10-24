@@ -160,7 +160,7 @@ defineExpose({ scrollToBottom, focusMatch })
 
           <MessageItem
             v-for="item in visibleMessages"
-            :key="`${conversation.id}:${item.message.id}:${item.index}`"
+            :key="`${conversation.id}:${item.message.id}`"
             :message="item.message"
             :index="item.index"
             :query="query"

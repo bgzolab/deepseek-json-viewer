@@ -290,9 +290,10 @@ function flattenMapping(
 
     while (cursor && !visited.has(cursor.key)) {
       visited.add(cursor.key)
-      path.unshift(cursor)
+      path.push(cursor)
       cursor = cursor.parentKey ? nodes.get(cursor.parentKey) : undefined
     }
+    path.reverse()
 
     const firstNode = path[0]
     if (firstNode && (!firstNode.parentKey || !nodes.has(firstNode.parentKey))) {
@@ -303,52 +304,49 @@ function flattenMapping(
     warnings.push('会话的 current_node 无法回溯到根节点，已自动选择最新分支')
   }
 
-  interface Candidate {
-    path: MappingNode[]
-    depth: number
-    timestamp: number
-  }
+  const leaves = [...nodes.values()].filter(
+    (node) => !node.childKeys.some((key) => nodes.has(key)),
+  )
 
-  const candidates: Candidate[] = []
-  const visit = (node: MappingNode, path: MappingNode[], stack: Set<string>): void => {
-    if (stack.has(node.key)) return
-    const nextPath = [...path, node]
-    const nextStack = new Set(stack)
-    nextStack.add(node.key)
+  let selectedPath: MappingNode[] = []
+  let selectedTimestamp = -Infinity
+  let selectedDepth = -1
 
-    const existingChildren = node.childKeys
-      .map((key) => nodes.get(key))
-      .filter((child): child is MappingNode => Boolean(child))
+  for (const leaf of leaves) {
+    const path: MappingNode[] = []
+    const visited = new Set<string>()
+    let cursor: MappingNode | undefined = leaf
 
-    if (existingChildren.length === 0) {
-      candidates.push({
-        path: nextPath,
-        depth: nextPath.length,
-        timestamp: node.timestamp,
-      })
-      return
+    while (cursor && !visited.has(cursor.key)) {
+      visited.add(cursor.key)
+      path.push(cursor)
+      cursor = cursor.parentKey ? nodes.get(cursor.parentKey) : undefined
     }
 
-    for (const child of existingChildren) {
-      visit(child, nextPath, nextStack)
+    // A node left in the cursor means this branch cycles and is not a valid root-to-leaf path.
+    if (cursor) continue
+
+    path.reverse()
+    const root = path[0]
+    if (!root) continue
+    if (root.parentKey && nodes.has(root.parentKey)) continue
+
+    const depth = path.length
+    if (
+      leaf.timestamp > selectedTimestamp ||
+      (leaf.timestamp === selectedTimestamp && depth > selectedDepth)
+    ) {
+      selectedPath = path
+      selectedTimestamp = leaf.timestamp
+      selectedDepth = depth
     }
   }
 
-  for (const root of roots) {
-    visit(root, [], new Set())
-  }
-
-  if (candidates.length === 0) {
+  if (selectedPath.length === 0) {
     warnings.push('mapping 中没有找到可用的消息路径')
     return []
   }
 
-  candidates.sort((left, right) => {
-    if (right.timestamp !== left.timestamp) return right.timestamp - left.timestamp
-    return right.depth - left.depth
-  })
-
-  const selectedPath = candidates[0]?.path ?? []
   return selectedPath
     .filter((node) => node.message !== null && node.message !== undefined)
     .map((node) => ({ nodeId: node.key, message: node.message }))

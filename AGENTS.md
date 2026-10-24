@@ -45,7 +45,7 @@
 - Supported generic shapes: top-level array, `{conversations|chats|data}`, nested `data.conversations`, or a single conversation; message arrays `messages|message_list|chat_messages|turns|history`. Full alias lists live at the top of `adapter.ts`; add tests for new aliases.
 - Dedupe semantics: conversations match by raw ID, then by fingerprint of title + sorted message fingerprints; messages match by raw ID, then by `role + content + createdAt`. Newer conversation metadata wins during a merge. Do not change these rules without updating `merge.test.ts` and `hash.test.ts`.
 - localStorage is only for `dsjv:selected-conversation` and `dsjv:sidebar-collapsed`. Never store chat content there.
-- Service worker: production only. `public/sw.js` precaches index-referenced assets plus the avatar/hero images; bump the cache name when changing the shell cache.
+- Service worker: production only. `public/sw.js` precaches index-referenced assets, discovers the Vite import worker chunk from the app bundle, and caches the avatar/hero images; bump the cache name when changing the shell cache.
 - `data/raw/` is ignored. Never commit real chat exports.
 - UI convention: intentionally mirrors the DeepSeek web chat. Preserve the layout tokens (260px sidebar, 60px header, 752px thread, 776px composer), colors in `src/styles/tokens.css`, and inline SVG icons via `AppIcon.vue`. Avoid reintroducing gradients, glows, or marketing-style cards.
 - Search is intentionally hidden behind the sidebar search icon / `Cmd/Ctrl+K`, matching the reference UI.
