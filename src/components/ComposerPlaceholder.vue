@@ -28,7 +28,7 @@ import AppIcon from './AppIcon.vue'
   z-index: 5;
   flex: none;
   width: 100%;
-  padding: 10px 20px 13px;
+  padding: 10px 20px calc(13px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(180deg, rgba(255, 255, 255, 0), #ffffff 34%);
 }
 
@@ -97,7 +97,7 @@ import AppIcon from './AppIcon.vue'
 
 @media (max-width: 640px) {
   .composer-area {
-    padding: 8px 12px 10px;
+    padding: 8px 12px calc(10px + env(safe-area-inset-bottom, 0px));
   }
 
   .composer {

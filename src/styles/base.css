@@ -10,6 +10,13 @@ body,
   height: 100%;
 }
 
+@supports (height: 100dvh) {
+  body,
+  #app {
+    height: 100dvh;
+  }
+}
+
 body {
   margin: 0;
   overflow: hidden;
@@ -20,6 +27,7 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
   text-rendering: optimizeLegibility;
 }
 
