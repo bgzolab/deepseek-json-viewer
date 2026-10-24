@@ -534,6 +534,7 @@ function onReasoningToggle(event: Event): void {
   color: var(--text-secondary);
   font-size: 11px;
   line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .references a:hover {
