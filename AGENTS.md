@@ -14,7 +14,7 @@
 - `npm run typecheck`
 - `npm test` — Vitest, Node environment, colocated `src/**/*.test.ts`
 - `npx vitest run src/lib/adapter.test.ts` — run one test file
-- `npm run build` — runs `vue-tsc -b` then Vite; output goes to `dist/`
+- `npm run build` — validates `public/sw.js` with `node --check`, runs `vue-tsc -b`, then Vite; output goes to `dist/`
 - `npm run preview` — serve the production build; the service worker registers only in production
 - Recommended verification: `npm run typecheck && npm test && npm run build`
 - There is no lint or formatter script.
@@ -56,6 +56,7 @@
 
 - Search occurrence counts come from raw Markdown while `<mark>` indexes come from rendered/sanitized text. Queries consisting of Markdown syntax or spanning stripped markup can overcount; message-level scroll fallback prevents breakage. Fixing this properly requires making rendered text the search-index source.
 - Messages with neither an ID nor a timestamp are intentionally deduplicated by `role + content` fingerprint per the existing contract. Legitimate identical messages in such minimal exports can collapse; changing this needs a product decision about cross-import merge semantics.
+- Re-importing a conversation after its active mapping branch changes keeps messages from the previous flattened branch (union merge). Message paths/node IDs are not persisted, so branch pruning/replacement needs a path-aware data model and a product decision.
 
 ## Tests and manual verification
 

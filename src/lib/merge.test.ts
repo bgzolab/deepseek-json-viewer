@@ -55,6 +55,33 @@ describe('mergeConversations', () => {
     expect(outcome.conversation.updatedAt).toBe('2026-01-02T00:00:00.000Z')
   })
 
+  it('fills edited matched messages even when new messages are appended', () => {
+    const existing = stored({
+      messages: [
+        { id: 'q1', role: 'user', content: 'original question' },
+        { id: 'a1', role: 'assistant', content: 'answer' },
+      ],
+    })
+    const incoming = conversation({
+      messages: [
+        { id: 'q1', role: 'user', content: 'original question with more detail' },
+        { id: 'a1', role: 'assistant', content: 'answer' },
+        { id: 'q2', role: 'user', content: 'follow-up' },
+      ],
+    })
+
+    const outcome = mergeConversations(existing, incoming, 2, 2)
+    expect(outcome.addedMessages).toBe(1)
+    expect(outcome.conversation.messages.map((message) => message.id)).toEqual([
+      'q1',
+      'a1',
+      'q2',
+    ])
+    expect(outcome.conversation.messages[0]?.content).toBe(
+      'original question with more detail',
+    )
+  })
+
   it('does not duplicate a repeated import', () => {
     const incoming = conversation({
       messages: [

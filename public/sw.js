@@ -1,14 +1,16 @@
-const CACHE_NAME = 'deepseek-json-viewer-shell-v4'
+const CACHE_NAME = 'deepseek-json-viewer-shell-v5'
 const INDEX_URL = new URL('index.html', self.registration.scope).toString()
 const ROOT_URL = self.registration.scope
 
 async function precacheAppShell() {
   const cache = await caches.open(CACHE_NAME)
+  const cachedUrls = new Set()
 
   const indexResponse = await fetch(INDEX_URL, { cache: 'no-cache' })
   if (!indexResponse.ok) throw new Error('Unable to fetch index.html')
 
   await cache.put(INDEX_URL, indexResponse.clone())
+  cachedUrls.add(INDEX_URL)
   const html = await indexResponse.text()
 
   const assetUrls = new Set()
@@ -42,6 +44,8 @@ async function precacheAppShell() {
     if (!response.ok) {
       throw new Error(`Unable to inspect ${jsUrl}: ${response.status}`)
     }
+    await cache.put(jsUrl, response.clone())
+    cachedUrls.add(jsUrl)
     const source = await response.text()
     const matches = source.match(workerPattern) ?? []
     for (const match of matches) {
@@ -54,6 +58,7 @@ async function precacheAppShell() {
 
   await Promise.all(
     [...assetUrls].map(async (url) => {
+      if (cachedUrls.has(url)) return
       const response = await fetch(url, { cache: 'reload' })
       if (!response.ok) {
         throw new Error(`Unable to precache ${url}: ${response.status}`)

@@ -41,6 +41,23 @@ function mergeMessageContent(existing: ChatMessage, incoming: ChatMessage): Chat
   }
 }
 
+function fillExistingMessages(
+  existingMessages: ChatMessage[],
+  incomingById: Map<string, ChatMessage>,
+  incomingByFingerprint: Map<string, ChatMessage>,
+): ChatMessage[] {
+  let filledSomething = false
+  const filled = existingMessages.map((message) => {
+    const incoming =
+      incomingById.get(message.id) ?? incomingByFingerprint.get(messageIdentity(message))
+    if (!incoming) return message
+    const merged = mergeMessageContent(message, incoming)
+    if (merged !== message) filledSomething = true
+    return merged
+  })
+  return filledSomething ? filled : existingMessages
+}
+
 function mergeMessages(
   existingMessages: ChatMessage[],
   incomingMessages: ChatMessage[],
@@ -71,16 +88,10 @@ function mergeMessages(
 
   if (incomingOnly.length === 0) {
     // Preserve the existing order while filling in fields that were previously incomplete.
-    let filledSomething = false
-    const filled = existingMessages.map((message) => {
-      const incoming =
-        incomingById.get(message.id) ?? incomingByFingerprint.get(messageIdentity(message))
-      if (!incoming) return message
-      const merged = mergeMessageContent(message, incoming)
-      if (merged !== message) filledSomething = true
-      return merged
-    })
-    return { messages: filledSomething ? filled : existingMessages, added: 0 }
+    return {
+      messages: fillExistingMessages(existingMessages, incomingById, incomingByFingerprint),
+      added: 0,
+    }
   }
 
   const incomingKeys = new Set(incomingMessages.map(messageIdentity))
@@ -99,7 +110,10 @@ function mergeMessages(
   }
 
   return {
-    messages: [...existingMessages, ...incomingOnly],
+    messages: [
+      ...fillExistingMessages(existingMessages, incomingById, incomingByFingerprint),
+      ...incomingOnly,
+    ],
     added,
   }
 }
