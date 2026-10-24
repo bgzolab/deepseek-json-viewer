@@ -81,6 +81,103 @@ describe('mergeConversations', () => {
     )
   })
 
+  it('preserves source order for consistently newest-first merges', () => {
+    const existing = stored({
+      messages: [
+        {
+          id: 'm3',
+          role: 'user',
+          content: 'newest existing',
+          createdAt: '2026-01-03T00:00:00.000Z',
+        },
+        {
+          id: 'm2',
+          role: 'assistant',
+          content: 'older existing',
+          createdAt: '2026-01-02T00:00:00.000Z',
+        },
+      ],
+    })
+    const incoming = conversation({
+      messages: [
+        {
+          id: 'm4',
+          role: 'user',
+          content: 'new message',
+          createdAt: '2026-01-04T00:00:00.000Z',
+        },
+        {
+          id: 'm3',
+          role: 'user',
+          content: 'newest existing',
+          createdAt: '2026-01-03T00:00:00.000Z',
+        },
+        {
+          id: 'm2',
+          role: 'assistant',
+          content: 'older existing',
+          createdAt: '2026-01-02T00:00:00.000Z',
+        },
+      ],
+    })
+
+    const outcome = mergeConversations(existing, incoming, 2, 2)
+    expect(outcome.addedMessages).toBe(1)
+    expect(outcome.conversation.messages.map((message) => message.id)).toEqual([
+      'm4',
+      'm3',
+      'm2',
+    ])
+  })
+
+  it('keeps existing order when incoming and existing order directions differ', () => {
+    const existing = stored({
+      messages: [
+        {
+          id: 'm1',
+          role: 'user',
+          content: 'first',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'm2',
+          role: 'assistant',
+          content: 'second',
+          createdAt: '2026-01-02T00:00:00.000Z',
+        },
+      ],
+    })
+    const incoming = conversation({
+      messages: [
+        {
+          id: 'm3',
+          role: 'user',
+          content: 'newest',
+          createdAt: '2026-01-03T00:00:00.000Z',
+        },
+        {
+          id: 'm1',
+          role: 'user',
+          content: 'first',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'm2',
+          role: 'assistant',
+          content: 'second',
+          createdAt: '2026-01-02T00:00:00.000Z',
+        },
+      ],
+    })
+
+    const outcome = mergeConversations(existing, incoming, 2, 2)
+    expect(outcome.conversation.messages.map((message) => message.id)).toEqual([
+      'm1',
+      'm2',
+      'm3',
+    ])
+  })
+
   it('does not duplicate a repeated import', () => {
     const incoming = conversation({
       messages: [

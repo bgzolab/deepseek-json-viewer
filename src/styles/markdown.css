@@ -259,7 +259,7 @@
   text-decoration: none;
 }
 
-.markdown-body .contains-task-list {
+.markdown-body ul:has(.md-task-checkbox) {
   padding-left: 18px;
   list-style: none;
 }

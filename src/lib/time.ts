@@ -132,18 +132,6 @@ export function formatDateTime(value: string | undefined): string {
   return fullDateFormat.format(new Date(timestamp)).replace(/\//g, '-')
 }
 
-export function formatFullDateTime(value: string | undefined): string {
-  return formatDateTime(value)
-}
-
-export function conversationDateLabel(conversation: Conversation): string {
-  if (conversation.updatedAt) return formatRelativeTime(conversation.updatedAt)
-  const last = lastMessageTime(conversation)
-  if (last !== null) return formatRelativeTime(new Date(last).toISOString())
-  if (conversation.createdAt) return formatRelativeTime(conversation.createdAt)
-  return '时间未知'
-}
-
 export function compactConversationDate(conversation: Conversation): string {
   const timestamp =
     toTime(conversation.updatedAt) ??

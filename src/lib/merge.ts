@@ -8,8 +8,26 @@ export interface MergeOutcome {
   changed: boolean
 }
 
-export function messageIdentity(message: ChatMessage): string {
+function messageIdentity(message: ChatMessage): string {
   return fingerprintMessage(message)
+}
+
+function messageOrderDirection(messages: ChatMessage[]): 'asc' | 'desc' | 'unknown' {
+  let ascending = false
+  let descending = false
+
+  for (let index = 1; index < messages.length; index += 1) {
+    const previous = toTime(messages[index - 1]?.createdAt)
+    const current = toTime(messages[index]?.createdAt)
+    if (previous === null || current === null) continue
+    if (current > previous) ascending = true
+    else if (current < previous) descending = true
+    if (ascending && descending) return 'unknown'
+  }
+
+  if (ascending) return 'asc'
+  if (descending) return 'desc'
+  return 'unknown'
 }
 
 function mergeMessageContent(existing: ChatMessage, incoming: ChatMessage): ChatMessage {
@@ -95,10 +113,19 @@ function mergeMessages(
 
   const incomingKeys = new Set(incomingMessages.map(messageIdentity))
   const existingIsSubset = existingMessages.every((message) => incomingKeys.has(messageIdentity(message)))
+  const existingDirection = messageOrderDirection(existingMessages)
+  const incomingDirection = messageOrderDirection(incomingMessages)
+  const canUseIncomingOrder =
+    existingMessages.length <= 1 ||
+    (existingDirection !== 'unknown' && existingDirection === incomingDirection)
 
   // When incomingOnly is non-empty, at least one incoming message is not in existing,
   // so the reverse-subset case cannot occur here.
-  if (existingIsSubset && incomingMessages.length >= existingMessages.length) {
+  if (
+    existingIsSubset &&
+    incomingMessages.length >= existingMessages.length &&
+    canUseIncomingOrder
+  ) {
     const merged = incomingMessages.map((message) => {
       const existing =
         existingById.get(message.id) ??
