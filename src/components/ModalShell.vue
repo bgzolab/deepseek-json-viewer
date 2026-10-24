@@ -107,7 +107,6 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   justify-content: center;
   padding: 20px;
   background: var(--bg-overlay);
-  backdrop-filter: blur(3px);
 }
 
 .modal-panel {
@@ -115,10 +114,10 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   flex-direction: column;
   width: min(100%, 560px);
   max-height: min(86vh, 760px);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
   background: var(--bg-surface);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   outline: none;
 }
 
@@ -135,7 +134,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-  padding: 22px 22px 0;
+  padding: 20px 20px 0;
 }
 
 .modal-title-wrap {
@@ -149,23 +148,22 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   flex: none;
-  border-radius: 11px;
+  border-radius: 10px;
   background: var(--brand-soft);
   color: var(--brand);
 }
 
 .modal-title-wrap h2 {
   margin: 1px 0 0;
-  font-size: 17px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .modal-title-wrap p {
-  margin: 5px 0 0;
+  margin: 4px 0 0;
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.55;
@@ -178,7 +176,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 
 .modal-body {
   min-height: 0;
-  padding: 20px 22px;
+  padding: 18px 20px;
   overflow: auto;
 }
 
@@ -187,7 +185,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  padding: 0 22px 22px;
+  padding: 0 20px 20px;
 }
 
 .modal-enter-active,
@@ -224,19 +222,19 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   .modal-panel.is-lg {
     width: 100%;
     max-height: 92vh;
-    border-radius: 18px;
+    border-radius: 16px;
   }
 
   .modal-head {
-    padding: 19px 18px 0;
+    padding: 18px 16px 0;
   }
 
   .modal-body {
-    padding: 17px 18px;
+    padding: 16px;
   }
 
   .modal-footer {
-    padding: 0 18px 18px;
+    padding: 0 16px 16px;
   }
 }
 </style>

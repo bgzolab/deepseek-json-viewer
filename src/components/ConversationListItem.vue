@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { StoredConversation } from '../types/chat'
-import { conversationDateLabel } from '../lib/time'
+import { lastMessageTime, toTime } from '../lib/time'
 import AppIcon from './AppIcon.vue'
 import HighlightText from './HighlightText.vue'
 
@@ -17,8 +17,42 @@ const emit = defineEmits<{
   delete: [id: string]
 }>()
 
-const dateLabel = computed(() => conversationDateLabel(props.conversation))
 const title = computed(() => props.conversation.title || '未命名会话')
+
+const dateLabel = computed(() => {
+  const updated = toTime(props.conversation.updatedAt)
+  const created = toTime(props.conversation.createdAt)
+  const last = lastMessageTime(props.conversation)
+  const timestamp = updated ?? last ?? created
+  if (timestamp === null) return ''
+
+  const date = new Date(timestamp)
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+  const days = Math.round((startOfToday - startOfDate) / 86_400_000)
+
+  if (days === 0) {
+    return new Intl.DateTimeFormat('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(date)
+  }
+  if (days === 1) return '昨天'
+  if (date.getFullYear() === now.getFullYear()) {
+    return `${date.getMonth() + 1}/${date.getDate()}`
+  }
+  return `${date.getFullYear()}/${date.getMonth() + 1}`
+})
+
+const metaLabel = computed(() => {
+  if (props.matchCount > 0) return `${props.matchCount} 处`
+  const parts: string[] = []
+  if (dateLabel.value) parts.push(dateLabel.value)
+  parts.push(`${props.conversation.messages.length} 条`)
+  return parts.join(' · ')
+})
 </script>
 
 <template>
@@ -32,12 +66,7 @@ const title = computed(() => props.conversation.title || '未命名会话')
       <span class="item-title">
         <HighlightText :text="title" :query="query" />
       </span>
-      <span class="item-meta">
-        <span class="item-date">{{ dateLabel }}</span>
-        <span class="meta-dot" aria-hidden="true">·</span>
-        <span>{{ conversation.messages.length }} 条</span>
-        <span v-if="matchCount > 0" class="match-badge">{{ matchCount }} 处匹配</span>
-      </span>
+      <span class="item-meta" :class="{ 'is-match': matchCount > 0 }">{{ metaLabel }}</span>
     </button>
 
     <button
@@ -47,7 +76,7 @@ const title = computed(() => props.conversation.title || '未命名会话')
       title="删除会话"
       @click.stop="emit('delete', conversation.id)"
     >
-      <AppIcon name="trash" :size="14" />
+      <AppIcon name="trash" :size="15" />
     </button>
   </div>
 </template>
@@ -55,7 +84,7 @@ const title = computed(() => props.conversation.title || '未命名会话')
 <style scoped>
 .conversation-item {
   position: relative;
-  border-radius: 10px;
+  border-radius: 12px;
   transition: background-color var(--transition-fast);
 }
 
@@ -67,78 +96,55 @@ const title = computed(() => props.conversation.title || '未命名会话')
   background: var(--bg-active);
 }
 
-.conversation-item.is-active::before {
-  position: absolute;
-  top: 12px;
-  bottom: 12px;
-  left: 0;
-  width: 2.5px;
-  border-radius: 999px;
-  background: var(--brand);
-  content: '';
-}
-
 .item-main {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  gap: 8px;
   width: 100%;
-  padding: 9px 36px 9px 11px;
+  height: 40px;
+  padding: 9px 10px;
+  color: var(--text);
   text-align: left;
 }
 
 .item-title {
   display: block;
+  min-width: 0;
+  flex: 1;
   overflow: hidden;
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 530;
-  line-height: 1.55;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .is-active .item-title {
-  color: #2f46a8;
-  font-weight: 580;
+  color: var(--brand);
+  font-weight: 400;
 }
 
 .item-meta {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  color: var(--text-tertiary);
-  font-size: 10.5px;
-  line-height: 1.45;
-}
-
-.item-date {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.meta-dot {
-  color: #c0c6d2;
-}
-
-.match-badge {
   flex: none;
-  margin-left: 2px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: #fff1c7;
-  color: #8b6000;
-  font-size: 9.5px;
-  font-weight: 600;
-  line-height: 1.5;
+  color: var(--text-caption);
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
+  transition: opacity var(--transition-fast);
+}
+
+.is-active .item-meta {
+  color: #7d9bea;
+}
+
+.item-meta.is-match {
+  color: var(--brand);
 }
 
 .item-delete {
   position: absolute;
   top: 50%;
-  right: 5px;
+  right: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -159,18 +165,31 @@ const title = computed(() => props.conversation.title || '未命名会话')
   opacity: 1;
 }
 
+.conversation-item:hover .item-meta,
+.conversation-item:focus-within .item-meta {
+  opacity: 0;
+}
+
 .item-delete:hover {
-  background: rgba(207, 63, 63, 0.08);
+  background: rgba(236, 19, 19, 0.06);
   color: var(--danger);
 }
 
 @media (hover: none) {
   .item-delete {
-    opacity: 0.7;
+    opacity: 0;
   }
 
-  .item-main {
-    padding-right: 40px;
+  .conversation-item.is-active .item-delete {
+    opacity: 0.55;
+  }
+
+  .conversation-item.is-active .item-main {
+    padding-right: 38px;
+  }
+
+  .conversation-item.is-active .item-meta {
+    display: none;
   }
 }
 </style>

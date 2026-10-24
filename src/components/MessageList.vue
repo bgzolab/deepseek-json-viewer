@@ -56,10 +56,7 @@ function onScroll(): void {
     element.scrollHeight - element.scrollTop - element.clientHeight < BOTTOM_THRESHOLD
 }
 
-function centerElementInScrollContainer(
-  container: HTMLElement,
-  target: HTMLElement,
-): void {
+function centerElementInScrollContainer(container: HTMLElement, target: HTMLElement): void {
   const containerRect = container.getBoundingClientRect()
   const targetRect = target.getBoundingClientRect()
   const targetTop =
@@ -147,7 +144,6 @@ defineExpose({ scrollToBottom, focusMatch })
     <div ref="scrollEl" class="message-list" @scroll.passive="onScroll">
       <div class="message-stream">
         <div v-if="isEmpty" class="messages-empty">
-          <div class="messages-empty-icon"><AppIcon name="message" :size="22" /></div>
           <strong>这个会话没有可展示的消息</strong>
           <p>可能是导出时消息为空，或该会话只包含暂不支持的内容。</p>
         </div>
@@ -159,9 +155,7 @@ defineExpose({ scrollToBottom, focusMatch })
             class="load-earlier"
             @click="loadEarlier"
           >
-            <AppIcon name="chevron-up" :size="14" />
             加载更早的 {{ Math.min(hiddenCount, 80) }} 条消息
-            <span v-if="hiddenCount > 80">（还有 {{ hiddenCount }} 条）</span>
           </button>
 
           <MessageItem
@@ -210,32 +204,28 @@ defineExpose({ scrollToBottom, focusMatch })
 }
 
 .message-stream {
-  width: min(100%, var(--content-width));
+  width: 100%;
+  max-width: 792px;
   min-height: 100%;
   margin: 0 auto;
-  padding: 28px 26px 34px;
+  padding: 34px 20px 28px;
 }
 
 .load-earlier {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  display: block;
   margin: 0 auto 24px;
-  padding: 6px 11px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--bg-surface);
+  padding: 4px 8px;
+  border-radius: 6px;
   color: var(--text-tertiary);
-  font-size: 10.5px;
+  font-size: 12px;
+  line-height: 20px;
   transition:
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    background-color var(--transition-fast);
+    background-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .load-earlier:hover {
-  border-color: var(--border-strong);
-  background: var(--bg-muted);
+  background: var(--bg-hover);
   color: var(--text-secondary);
 }
 
@@ -248,34 +238,21 @@ defineExpose({ scrollToBottom, focusMatch })
   text-align: center;
 }
 
-.messages-empty-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  margin-bottom: 13px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--bg-muted);
-  color: var(--text-tertiary);
-}
-
 .messages-empty strong {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .messages-empty p {
-  margin: 6px 0 0;
+  margin: 5px 0 0;
   color: var(--text-tertiary);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .scroll-bottom {
   position: absolute;
+  right: max(20px, calc((100% - 792px) / 2 + 20px));
   bottom: 18px;
-  left: 50%;
   z-index: 4;
   display: flex;
   align-items: center;
@@ -284,34 +261,41 @@ defineExpose({ scrollToBottom, focusMatch })
   height: 34px;
   border: 1px solid var(--border);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--bg-surface);
   color: var(--text-secondary);
-  box-shadow: var(--shadow-sm);
-  transform: translateX(-50%);
-  backdrop-filter: blur(8px);
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .scroll-bottom:hover {
   border-color: var(--border-strong);
-  color: var(--text);
+  background: var(--bg-muted);
 }
 
 .scroll-button-enter-active,
 .scroll-button-leave-active {
   transition:
-    opacity 160ms ease,
-    transform 160ms ease;
+    opacity 150ms ease,
+    transform 150ms ease;
 }
 
 .scroll-button-enter-from,
 .scroll-button-leave-to {
   opacity: 0;
-  transform: translate(-50%, 4px);
+  transform: translateY(4px);
+}
+
+@media (max-width: 860px) {
+  .message-stream {
+    max-width: 100%;
+    padding: 24px 18px 24px;
+  }
 }
 
 @media (max-width: 640px) {
   .message-stream {
-    padding: 22px 15px 28px;
+    padding: 20px 14px 22px;
   }
 }
 </style>

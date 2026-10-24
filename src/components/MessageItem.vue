@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { ChatMessage } from '../types/chat'
+import { avatarUrl } from '../lib/assets'
 import { copyText } from '../lib/clipboard'
 import { countOccurrences } from '../lib/search'
 import { formatDateTime, formatFileSize } from '../lib/time'
@@ -24,10 +25,6 @@ const props = withDefaults(
 const isUser = computed(() => props.message.role === 'user')
 const isSystem = computed(() => props.message.role === 'system')
 const isUnknownRole = computed(() => props.message.role === 'unknown')
-const roleLabel = computed(() => {
-  if (isUnknownRole.value) return '其他消息'
-  return '助手'
-})
 
 const reasoningOpen = ref(false)
 const reasoningHasMatch = computed(() => {
@@ -100,7 +97,7 @@ function onReasoningToggle(event: Event): void {
   >
     <div class="system-box">
       <span class="system-label">系统消息</span>
-      <p v-if="!message.content.trim()" class="empty-content">（空消息）</p>
+      <p v-if="!message.content.trim()" class="empty-content">空消息</p>
       <MarkdownBody
         v-else
         :text="message.content"
@@ -124,7 +121,7 @@ function onReasoningToggle(event: Event): void {
           :query="query"
           :search-start-index="searchStartIndex"
         />
-        <p v-else-if="!message.attachments?.length" class="empty-content">（空消息）</p>
+        <p v-else-if="!message.attachments?.length" class="empty-content">空消息</p>
 
         <div v-if="message.attachments?.length" class="attachment-list">
           <span
@@ -139,7 +136,7 @@ function onReasoningToggle(event: Event): void {
         </div>
       </div>
 
-      <div class="user-meta">
+      <div class="message-actions user-actions">
         <time v-if="message.createdAt">{{ formatDateTime(message.createdAt) }}</time>
         <button
           type="button"
@@ -149,7 +146,7 @@ function onReasoningToggle(event: Event): void {
           :title="copyState === 'copied' ? '已复制' : '复制消息'"
           @click="copyMessage"
         >
-          <AppIcon :name="copyState === 'copied' ? 'check' : 'copy'" :size="13" />
+          <AppIcon :name="copyState === 'copied' ? 'check' : 'copy'" :size="14" />
         </button>
       </div>
     </div>
@@ -161,27 +158,8 @@ function onReasoningToggle(event: Event): void {
     :data-message-index="index"
     :data-message-id="message.id"
   >
-    <div class="assistant-avatar" aria-hidden="true">
-      <AppIcon name="sparkles" :size="16" />
-    </div>
-
-    <div class="assistant-body">
-      <div class="assistant-head">
-        <span class="role-label" :class="{ 'is-unknown': isUnknownRole }">{{ roleLabel }}</span>
-        <time v-if="message.createdAt">{{ formatDateTime(message.createdAt) }}</time>
-        <button
-          type="button"
-          class="message-action"
-          :class="{ 'is-copied': copyState === 'copied' }"
-          :aria-label="copyState === 'copied' ? '已复制消息' : '复制消息'"
-          :title="copyState === 'copied' ? '已复制' : '复制消息'"
-          @click="copyMessage"
-        >
-          <AppIcon :name="copyState === 'copied' ? 'check' : 'copy'" :size="13" />
-          <span v-if="copyState === 'copied'">已复制</span>
-          <span v-else-if="copyState === 'failed'">复制失败</span>
-        </button>
-      </div>
+    <div class="assistant-main">
+      <div v-if="isUnknownRole" class="unknown-role">其他消息</div>
 
       <details
         v-if="message.reasoning?.trim()"
@@ -190,9 +168,8 @@ function onReasoningToggle(event: Event): void {
         @toggle="onReasoningToggle"
       >
         <summary>
-          <span class="reasoning-spark"><AppIcon name="sparkles" :size="13" /></span>
-          <span>深度思考</span>
-          <span class="reasoning-summary-hint">{{ reasoningOpen ? '收起' : '展开' }}</span>
+          <img class="reasoning-avatar" :src="avatarUrl" alt="" />
+          <span class="reasoning-label">已深度思考</span>
           <AppIcon name="chevron-down" :size="14" class="reasoning-chevron" />
         </summary>
         <div class="reasoning-content">
@@ -226,7 +203,6 @@ function onReasoningToggle(event: Event): void {
 
       <details v-if="safeReferences.length" class="references">
         <summary>
-          <AppIcon name="layers" :size="13" />
           参考来源
           <span>{{ safeReferences.length }}</span>
         </summary>
@@ -240,7 +216,21 @@ function onReasoningToggle(event: Event): void {
         </ol>
       </details>
 
-      <p v-if="!hasBody" class="empty-content assistant-empty">（该消息没有可展示的内容）</p>
+      <p v-if="!hasBody" class="empty-content assistant-empty">该消息没有可展示的内容</p>
+
+      <div class="message-actions assistant-actions">
+        <button
+          type="button"
+          class="message-action"
+          :class="{ 'is-copied': copyState === 'copied' }"
+          :aria-label="copyState === 'copied' ? '已复制消息' : '复制消息'"
+          :title="copyState === 'copied' ? '已复制' : '复制消息'"
+          @click="copyMessage"
+        >
+          <AppIcon :name="copyState === 'copied' ? 'check' : 'copy'" :size="14" />
+        </button>
+        <time v-if="message.createdAt">{{ formatDateTime(message.createdAt) }}</time>
+      </div>
     </div>
   </article>
 </template>
@@ -252,7 +242,7 @@ function onReasoningToggle(event: Event): void {
 }
 
 .message + .message {
-  margin-top: 26px;
+  margin-top: 22px;
 }
 
 .message-user {
@@ -270,131 +260,74 @@ function onReasoningToggle(event: Event): void {
 
 .user-bubble {
   max-width: 100%;
-  padding: 10px 15px;
-  border: 1px solid var(--user-bubble-border);
-  border-radius: 17px 17px 5px 17px;
+  padding: 10px 16px;
+  border-radius: 22px;
   background: var(--user-bubble);
-  color: #232b3d;
+  color: var(--text);
   overflow-wrap: anywhere;
 }
 
 .user-bubble :deep(.markdown-body) {
-  font-size: 15px;
-  line-height: 1.72;
+  font-size: 16px;
+  line-height: 24px;
 }
 
-.user-meta {
+.user-bubble :deep(.markdown-body p) {
+  margin: 0 0 8px;
+}
+
+.user-bubble :deep(.markdown-body > :last-child) {
+  margin-bottom: 0;
+}
+
+.message-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
-  min-height: 20px;
-  margin-top: 4px;
-  padding-right: 3px;
-  color: var(--text-tertiary);
-  font-size: 9.5px;
+  gap: 2px;
+  min-height: 28px;
+  margin-top: 1px;
+  color: var(--text-caption);
+  font-size: 11px;
   opacity: 0;
   transition: opacity var(--transition-fast);
 }
 
-.message-user:hover .user-meta,
-.message-user:focus-within .user-meta {
+.user-actions {
+  padding-right: 2px;
+}
+
+.message-user:hover .message-actions,
+.message-user:focus-within .message-actions,
+.message-assistant:hover .message-actions,
+.message-assistant:focus-within .message-actions {
   opacity: 1;
 }
 
-.assistant-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  margin-top: 1px;
-  flex: none;
-  border-radius: 9px;
-  background: var(--assistant-avatar);
-  color: white;
-  box-shadow: 0 8px 16px -12px rgba(77, 107, 254, 0.9);
-}
-
-.assistant-body {
+.assistant-main {
+  width: 100%;
   min-width: 0;
-  max-width: 100%;
-  flex: 1;
-  padding-left: 13px;
 }
 
-.assistant-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 24px;
-  margin-bottom: 3px;
-}
-
-.role-label {
-  color: #394154;
-  font-size: 11.5px;
-  font-weight: 620;
-  letter-spacing: 0.01em;
-}
-
-.role-label.is-unknown {
+.unknown-role {
+  margin-bottom: 4px;
   color: var(--text-tertiary);
-}
-
-.assistant-head time {
-  color: var(--text-tertiary);
-  font-size: 9.5px;
-}
-
-.message-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 5px;
-  border-radius: 5px;
-  color: #a2aab8;
-  font-size: 9.5px;
-  opacity: 0;
-  transition:
-    opacity var(--transition-fast),
-    background-color var(--transition-fast),
-    color var(--transition-fast);
-}
-
-.message-user:hover .message-action,
-.message-user:focus-within .message-action,
-.message-assistant:hover .message-action,
-.message-assistant:focus-within .message-action {
-  opacity: 1;
-}
-
-.message-action:hover {
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-}
-
-.message-action.is-copied {
-  color: var(--success);
-  opacity: 1;
+  font-size: 12px;
 }
 
 .reasoning {
-  margin: 2px 0 12px;
-  overflow: hidden;
-  border: 1px solid #e6e9f2;
-  border-radius: 11px;
-  background: #fafbfe;
+  margin: 0 0 6px;
 }
 
 .reasoning summary {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 0 11px;
-  color: #707b90;
-  font-size: 11.5px;
-  font-weight: 550;
+  gap: 7px;
+  min-height: 34px;
+  margin-left: -7px;
+  padding: 4px 7px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
   list-style: none;
   cursor: pointer;
   user-select: none;
@@ -405,25 +338,24 @@ function onReasoningToggle(event: Event): void {
 }
 
 .reasoning summary:hover {
-  background: #f6f8fc;
+  background: var(--bg-hover);
 }
 
-.reasoning-spark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #7c8cff;
+.reasoning-avatar {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 50%;
+  background: #111;
+  object-fit: cover;
 }
 
-.reasoning-summary-hint {
-  margin-left: auto;
-  color: #a9b1c0;
-  font-size: 9.5px;
-  font-weight: 400;
+.reasoning-label {
+  line-height: 20px;
 }
 
 .reasoning-chevron {
-  color: #a9b1c0;
+  color: var(--text-caption);
   transition: transform var(--transition-fast);
 }
 
@@ -431,22 +363,13 @@ function onReasoningToggle(event: Event): void {
   transform: rotate(180deg);
 }
 
-.reasoning[open] .reasoning-summary-hint {
-  display: none;
-}
-
 .reasoning-content {
-  padding: 1px 13px 12px;
-  border-top: 1px solid #edf0f6;
+  padding: 2px 0 10px 26px;
   color: var(--text-secondary);
 }
 
-.reasoning-content :deep(.markdown-body) {
-  padding-top: 10px;
-}
-
 .assistant-attachments {
-  margin-top: 9px;
+  margin-top: 8px;
 }
 
 .attachment-list {
@@ -457,7 +380,7 @@ function onReasoningToggle(event: Event): void {
 }
 
 .user-bubble .attachment-list {
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .attachment-chip {
@@ -465,12 +388,12 @@ function onReasoningToggle(event: Event): void {
   align-items: center;
   gap: 5px;
   max-width: 100%;
-  padding: 5px 8px;
-  border: 1px solid rgba(180, 192, 220, 0.5);
+  padding: 4px 8px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.58);
-  color: #5b667b;
-  font-size: 10.5px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .attachment-name {
@@ -480,15 +403,13 @@ function onReasoningToggle(event: Event): void {
 }
 
 .attachment-size {
-  color: var(--text-tertiary);
-  font-size: 9.5px;
+  color: var(--text-caption);
+  font-size: 11px;
   white-space: nowrap;
 }
 
 .references {
-  margin-top: 13px;
-  border-top: 1px solid #edf0f6;
-  padding-top: 9px;
+  margin-top: 12px;
 }
 
 .references summary {
@@ -496,8 +417,9 @@ function onReasoningToggle(event: Event): void {
   align-items: center;
   gap: 5px;
   width: fit-content;
+  padding: 2px 0;
   color: var(--text-tertiary);
-  font-size: 10.5px;
+  font-size: 12px;
   list-style: none;
   cursor: pointer;
   user-select: none;
@@ -508,17 +430,15 @@ function onReasoningToggle(event: Event): void {
 }
 
 .references summary span {
-  padding: 0 4px;
-  border-radius: 4px;
-  background: var(--bg-muted);
-  font-size: 9px;
+  color: var(--text-caption);
+  font-size: 11px;
 }
 
 .references ol {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  margin: 8px 0 0;
+  gap: 2px;
+  margin: 4px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -532,8 +452,8 @@ function onReasoningToggle(event: Event): void {
   align-items: baseline;
   gap: 6px;
   color: var(--text-secondary);
-  font-size: 11px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 20px;
   overflow-wrap: anywhere;
 }
 
@@ -542,23 +462,16 @@ function onReasoningToggle(event: Event): void {
 }
 
 .reference-index {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   min-width: 16px;
-  height: 16px;
-  flex: none;
-  border-radius: 4px;
-  background: var(--bg-muted);
-  color: var(--text-tertiary);
-  font-size: 9px;
-  line-height: 1;
+  color: var(--text-caption);
+  font-size: 11px;
+  text-align: right;
 }
 
 .empty-content {
   margin: 0;
   color: var(--text-tertiary);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .assistant-empty {
@@ -567,13 +480,12 @@ function onReasoningToggle(event: Event): void {
 
 .message-system {
   justify-content: center;
-  margin: 18px 0;
+  margin: 20px 0;
 }
 
 .system-box {
   width: min(100%, 600px);
-  padding: 10px 14px;
-  border: 1px solid var(--border);
+  padding: 9px 12px;
   border-radius: 10px;
   background: var(--bg-muted);
   color: var(--text-secondary);
@@ -581,21 +493,52 @@ function onReasoningToggle(event: Event): void {
 
 .system-label {
   display: block;
-  margin-bottom: 3px;
-  color: var(--text-tertiary);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  margin-bottom: 2px;
+  color: var(--text-caption);
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .system-box :deep(.markdown-body) {
   font-size: 13px;
+  line-height: 20px;
+}
+
+.message-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  color: var(--text-tertiary);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.message-action:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.message-action.is-copied {
+  color: var(--success);
+}
+
+.assistant-actions {
+  margin-top: 4px;
+  padding-left: 0;
+}
+
+.assistant-actions time {
+  color: var(--text-caption);
+  font-size: 11px;
 }
 
 @media (max-width: 640px) {
   .message + .message {
-    margin-top: 22px;
+    margin-top: 18px;
   }
 
   .message-user {
@@ -607,22 +550,17 @@ function onReasoningToggle(event: Event): void {
     padding: 9px 13px;
   }
 
-  .assistant-avatar {
-    width: 27px;
-    height: 27px;
-    border-radius: 8px;
+  .user-bubble :deep(.markdown-body) {
+    font-size: 15px;
+    line-height: 23px;
   }
 
-  .assistant-body {
-    padding-left: 10px;
+  .message-actions {
+    opacity: 1;
   }
 
-  .message-action {
-    opacity: 0.6;
-  }
-
-  .user-meta {
-    opacity: 0.7;
+  .reasoning-content {
+    padding-left: 12px;
   }
 }
 </style>

@@ -73,10 +73,10 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   flex: none;
-  border-radius: 11px;
+  border-radius: 50%;
   background: var(--brand-soft);
   color: var(--brand);
 }
@@ -88,25 +88,24 @@ const emit = defineEmits<{
 
 .confirm-heading h2 {
   margin: 1px 0 0;
-  font-size: 17px;
-  font-weight: 650;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .confirm-heading p {
-  margin: 5px 0 0;
+  margin: 4px 0 0;
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.55;
 }
 
 .confirm-detail {
-  margin: 15px 0 0;
-  padding: 11px 13px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
   background: var(--bg-muted);
   color: var(--text-secondary);
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
 }
 </style>

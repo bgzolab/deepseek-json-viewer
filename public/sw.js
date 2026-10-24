@@ -1,4 +1,4 @@
-const CACHE_NAME = 'deepseek-json-viewer-shell-v1'
+const CACHE_NAME = 'deepseek-json-viewer-shell-v2'
 const INDEX_URL = new URL('index.html', self.registration.scope).toString()
 const ROOT_URL = self.registration.scope
 
@@ -30,6 +30,8 @@ async function precacheAppShell() {
 
   assetUrls.add(INDEX_URL)
   assetUrls.add(ROOT_URL)
+  assetUrls.add(new URL('images/avatar.webp', self.registration.scope).toString())
+  assetUrls.add(new URL('images/brand-hero.webp', self.registration.scope).toString())
 
   await Promise.all(
     [...assetUrls].map(async (url) => {

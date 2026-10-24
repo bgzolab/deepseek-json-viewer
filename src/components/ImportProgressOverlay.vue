@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ImportProgress } from '../types/import'
-import AppIcon from './AppIcon.vue'
 import ModalShell from './ModalShell.vue'
 
 const props = defineProps<{
@@ -15,13 +14,9 @@ const percentage = computed(() => {
 })
 
 const phaseLabel = computed(() => {
-  if (props.progress.phase === 'parsing') {
-    return props.progress.fileCount > 1
-      ? `解析文件 ${Math.max(1, props.progress.fileIndex)} / ${props.progress.fileCount}`
-      : '正在解析 JSON'
-  }
-  if (props.progress.phase === 'saving') return '写入本地缓存'
-  return '准备中'
+  if (props.progress.phase === 'parsing') return '正在解析文件'
+  if (props.progress.phase === 'saving') return '正在写入本地缓存'
+  return '正在准备'
 })
 </script>
 
@@ -29,23 +24,18 @@ const phaseLabel = computed(() => {
   <ModalShell
     :open="open"
     title="正在导入聊天记录"
-    :description="progress.message || '所有处理都在本地完成，请稍候。'"
-    :dismissible="false"
     width="sm"
+    :dismissible="false"
   >
-    <div class="progress-visual" aria-hidden="true">
-      <div class="progress-orbit">
-        <div class="progress-core">
-          <AppIcon name="database" :size="20" />
-        </div>
-        <span class="orbit-dot" />
-      </div>
-    </div>
-
-    <div class="progress-meta">
+    <div class="progress-summary">
+      <span class="spinner" />
       <span>{{ phaseLabel }}</span>
-      <span v-if="progress.phase === 'saving'">{{ progress.written }} / {{ progress.total }}</span>
-      <span v-else-if="progress.fileName" class="progress-file">{{ progress.fileName }}</span>
+      <span v-if="progress.phase === 'saving'" class="progress-count">
+        {{ progress.written }} / {{ progress.total }}
+      </span>
+      <span v-else-if="progress.fileCount > 0" class="progress-count">
+        {{ Math.max(1, progress.fileIndex) }} / {{ progress.fileCount }}
+      </span>
     </div>
 
     <div
@@ -62,94 +52,53 @@ const phaseLabel = computed(() => {
       />
     </div>
 
-    <p class="progress-note">
-      <AppIcon name="shield" :size="14" />
-      文件仅在当前浏览器内解析，不会上传到任何服务器。
-    </p>
+    <p v-if="progress.fileName" class="progress-file">{{ progress.fileName }}</p>
+    <p class="progress-note">文件仅在当前浏览器内解析，不会上传。</p>
   </ModalShell>
 </template>
 
 <style scoped>
-.progress-visual {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0 20px;
-}
-
-.progress-orbit {
-  position: relative;
+.progress-summary {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  border: 1px solid rgba(77, 107, 254, 0.18);
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #f5f8ff, #e9efff);
-}
-
-.progress-core {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 13px;
-  background: var(--brand);
-  color: white;
-  box-shadow: 0 8px 20px -10px rgba(77, 107, 254, 0.9);
-}
-
-.orbit-dot {
-  position: absolute;
-  inset: 5px;
-  border-radius: 50%;
-  border-top: 2px solid var(--brand);
-  animation: orbit 1.1s linear infinite;
-}
-
-@keyframes orbit {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.progress-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 9px;
+  gap: 8px;
   color: var(--text-secondary);
-  font-size: 12.5px;
+  font-size: 13px;
+  line-height: 20px;
 }
 
-.progress-file {
-  max-width: 60%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.progress-summary .spinner {
+  width: 15px;
+  height: 15px;
+  color: var(--brand);
+}
+
+.progress-count {
+  margin-left: auto;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 .progress-track {
-  position: relative;
-  height: 6px;
+  height: 4px;
+  margin-top: 14px;
   overflow: hidden;
   border-radius: 999px;
-  background: #edf0f6;
+  background: var(--bg-hover);
 }
 
 .progress-fill {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #7188ff, var(--brand));
-  transition: width 280ms var(--ease-out);
+  background: var(--brand);
+  transition: width 240ms var(--ease-out);
 }
 
 .progress-track.is-indeterminate .progress-fill {
-  width: 38%;
-  animation: indeterminate 1.15s var(--ease-out) infinite;
+  width: 36%;
+  animation: indeterminate 1.1s ease-in-out infinite;
 }
 
 @keyframes indeterminate {
@@ -161,13 +110,20 @@ const phaseLabel = computed(() => {
   }
 }
 
+.progress-file {
+  margin: 12px 0 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .progress-note {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  margin: 16px 0 0;
+  margin: 3px 0 0;
   color: var(--text-tertiary);
-  font-size: 11.5px;
+  font-size: 12px;
+  line-height: 18px;
 }
 </style>

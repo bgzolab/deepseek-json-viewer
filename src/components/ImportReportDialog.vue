@@ -179,27 +179,13 @@ function fileSummary(file: ImportFileOutcome): string {
 .report {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 .report-hero {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 14px 15px;
-  border: 1px solid #dff1e8;
-  border-radius: 13px;
-  background: var(--success-soft);
-}
-
-.report-hero.is-warning {
-  border-color: #f3e5c8;
-  background: var(--warning-soft);
-}
-
-.report-hero.is-danger {
-  border-color: #f3d6d6;
-  background: var(--danger-soft);
+  gap: 10px;
 }
 
 .report-hero-icon {
@@ -209,58 +195,59 @@ function fileSummary(file: ImportFileOutcome): string {
   width: 34px;
   height: 34px;
   flex: none;
-  border-radius: 10px;
-  background: white;
+  border-radius: 50%;
+  background: var(--success-soft);
   color: var(--success);
-  box-shadow: var(--shadow-xs);
 }
 
-.is-warning .report-hero-icon {
+.report-hero.is-warning .report-hero-icon {
+  background: var(--warning-soft);
   color: var(--warning);
 }
 
-.is-danger .report-hero-icon {
+.report-hero.is-danger .report-hero-icon {
+  background: var(--danger-soft);
   color: var(--danger);
 }
 
 .report-hero h3 {
   margin: 1px 0 0;
-  font-size: 14.5px;
-  font-weight: 650;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .report-hero p {
   margin: 3px 0 0;
   color: var(--text-secondary);
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-muted);
 }
 
 .stat-card {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
-  padding: 11px 12px;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  background: var(--bg-muted);
+  padding: 10px 12px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
-.stat-card.is-accent {
-  border-color: #dce5ff;
-  background: var(--brand-soft);
+.stat-card:nth-child(4n) {
+  border-right: 0;
 }
 
-.stat-card.is-danger {
-  border-color: #f2d7d7;
-  background: var(--danger-soft);
+.stat-card:nth-last-child(-n + 4) {
+  border-bottom: 0;
 }
 
 .stat-label {
@@ -272,22 +259,30 @@ function fileSummary(file: ImportFileOutcome): string {
 }
 
 .stat-card strong {
-  font-size: 20px;
-  font-weight: 620;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+  color: var(--text);
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-card.is-accent strong {
+  color: var(--brand);
+}
+
+.stat-card.is-danger strong {
+  color: var(--danger);
 }
 
 .report-alert {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid #f2d7d7;
-  border-radius: 10px;
+  padding: 9px 11px;
+  border-radius: 8px;
   background: var(--danger-soft);
   color: var(--danger);
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.55;
 }
 
@@ -305,7 +300,7 @@ function fileSummary(file: ImportFileOutcome): string {
 .section-heading h4 {
   margin: 0;
   font-size: 12.5px;
-  font-weight: 650;
+  font-weight: 500;
 }
 
 .section-heading span {
@@ -314,24 +309,25 @@ function fileSummary(file: ImportFileOutcome): string {
 }
 
 .file-list {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
   max-height: 280px;
   overflow: auto;
-  padding-right: 3px;
-}
-
-.file-row {
-  padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg-surface);
 }
 
+.file-row {
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+.file-row:first-child {
+  border-top: 0;
+}
+
 .file-row.is-error {
-  border-color: #f0d8d8;
-  background: #fffbfb;
+  background: #fffafa;
 }
 
 .file-row-main {
@@ -383,23 +379,18 @@ function fileSummary(file: ImportFileOutcome): string {
 .file-result {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   flex: none;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--success-soft);
   color: var(--success);
-  font-size: 10.5px;
-  font-weight: 600;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .file-result.is-warning {
-  background: var(--warning-soft);
   color: var(--warning);
 }
 
 .file-result.is-error {
-  background: var(--danger-soft);
   color: var(--danger);
 }
 
@@ -439,6 +430,22 @@ function fileSummary(file: ImportFileOutcome): string {
 @media (max-width: 560px) {
   .stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat-card:nth-child(4n) {
+    border-right: 1px solid var(--border);
+  }
+
+  .stat-card:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .stat-card:nth-last-child(-n + 4) {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-card:nth-last-child(-n + 2) {
+    border-bottom: 0;
   }
 
   .file-list {

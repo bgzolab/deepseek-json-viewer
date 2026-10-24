@@ -446,8 +446,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 28px;
-  background: rgba(238, 242, 255, 0.72);
-  backdrop-filter: blur(7px);
+  background: rgba(249, 250, 251, 0.82);
+  backdrop-filter: blur(4px);
   pointer-events: none;
 }
 
@@ -456,13 +456,12 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: min(100%, 540px);
-  min-height: 260px;
+  width: min(100%, 520px);
+  min-height: 220px;
   padding: 28px;
-  border: 2px dashed #a9baf1;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: var(--shadow-lg);
+  border: 1.5px dashed #b7c8fe;
+  border-radius: 20px;
+  background: var(--bg-surface);
   text-align: center;
 }
 
@@ -470,24 +469,22 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  margin-bottom: 15px;
-  border-radius: 17px;
-  background: var(--brand);
-  color: white;
-  box-shadow: 0 14px 30px -14px rgba(77, 107, 254, 0.9);
+  width: 48px;
+  height: 48px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--brand);
 }
 
 .drop-overlay-card strong {
-  font-size: 18px;
-  font-weight: 650;
-  letter-spacing: -0.02em;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .drop-overlay-card > span {
-  margin-top: 6px;
-  color: var(--text-secondary);
+  margin-top: 5px;
+  color: var(--text-tertiary);
   font-size: 12px;
 }
 
@@ -503,13 +500,12 @@ onBeforeUnmount(() => {
   padding: 9px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--bg-surface);
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.5;
   box-shadow: var(--shadow-md);
   transform: translateX(-50%);
-  backdrop-filter: blur(10px);
 }
 
 .toast.is-error {
@@ -564,7 +560,7 @@ onBeforeUnmount(() => {
     bottom: 0;
     left: 0;
     z-index: 50;
-    width: min(86vw, 320px);
+    width: min(86vw, 280px);
     transform: translateX(-102%);
     transition: transform 260ms var(--ease-out);
   }
@@ -585,11 +581,10 @@ onBeforeUnmount(() => {
     inset: 0;
     z-index: 45;
     display: block;
-    background: rgba(25, 31, 45, 0.32);
+    background: rgba(0, 0, 0, 0.4);
     opacity: 0;
     pointer-events: none;
     transition: opacity 220ms ease;
-    backdrop-filter: blur(1.5px);
   }
 
   .sidebar-backdrop.is-visible {

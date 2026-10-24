@@ -25,6 +25,7 @@ const activeMatchNumber = computed(() => {
   if (matchTotal.value === 0) return 0
   return Math.min(store.state.activeMatch + 1, matchTotal.value)
 })
+const desktopToggleVisible = computed(() => store.state.sidebarCollapsed)
 </script>
 
 <template>
@@ -33,11 +34,12 @@ const activeMatchNumber = computed(() => {
       <button
         type="button"
         class="icon-button sidebar-toggle"
+        :class="{ 'is-desktop-visible': desktopToggleVisible }"
         aria-label="切换会话侧边栏"
         title="切换会话侧边栏"
         @click="emit('toggle-sidebar')"
       >
-        <AppIcon name="sidebar" :size="18" class="desktop-icon" />
+        <AppIcon name="sidebar" :size="17" class="desktop-icon" />
         <AppIcon name="menu" :size="18" class="mobile-icon" />
       </button>
 
@@ -46,21 +48,14 @@ const activeMatchNumber = computed(() => {
           <HighlightText :text="conversation.title || '未命名会话'" :query="store.state.query.trim()" />
         </h1>
         <div class="meta-row">
-          <span v-if="conversation.model" class="meta-chip model-chip">
-            <AppIcon name="sparkles" :size="11" />
-            {{ conversation.model }}
+          <span v-if="conversation.model">{{ conversation.model }}</span>
+          <span v-if="conversation.model" class="meta-separator">·</span>
+          <span>{{ conversation.messages.length }} 条消息</span>
+          <span v-if="conversation.createdAt" class="meta-extra">
+            <span class="meta-separator">·</span>创建 {{ formatDateTime(conversation.createdAt) }}
           </span>
-          <span class="meta-chip">
-            <AppIcon name="message" :size="11" />
-            {{ conversation.messages.length }} 条消息
-          </span>
-          <span v-if="conversation.createdAt" class="meta-chip meta-time">
-            <AppIcon name="calendar" :size="11" />
-            创建 {{ formatDateTime(conversation.createdAt) }}
-          </span>
-          <span v-if="conversation.updatedAt" class="meta-chip meta-time">
-            <AppIcon name="clock" :size="11" />
-            更新 {{ formatDateTime(conversation.updatedAt) }}
+          <span v-if="conversation.updatedAt" class="meta-extra">
+            <span class="meta-separator">·</span>更新 {{ formatDateTime(conversation.updatedAt) }}
           </span>
         </div>
       </div>
@@ -68,10 +63,7 @@ const activeMatchNumber = computed(() => {
       <div v-else class="title-block">
         <h1>对话预览</h1>
         <div class="meta-row">
-          <span class="meta-chip">
-            <AppIcon name="shield" :size="11" />
-            本地只读模式
-          </span>
+          <span>本地只读模式</span>
         </div>
       </div>
     </div>
@@ -122,22 +114,24 @@ const activeMatchNumber = computed(() => {
   gap: 18px;
   min-height: var(--header-height);
   flex: none;
-  padding: 0 20px 0 16px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(14px);
+  padding: 0 14px 0 8px;
+  background: var(--bg-surface);
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 10px;
   min-width: 0;
   flex: 1;
 }
 
 .sidebar-toggle {
+  display: none;
   flex: none;
+}
+
+.sidebar-toggle.is-desktop-visible {
+  display: flex;
 }
 
 .mobile-icon {
@@ -147,17 +141,17 @@ const activeMatchNumber = computed(() => {
 .title-block {
   min-width: 0;
   flex: 1;
-  padding: 5px 0;
+  padding: 5px 8px;
+  border-radius: 10px;
 }
 
 .title-block h1 {
   overflow: hidden;
   margin: 0;
-  color: #1d222c;
-  font-size: 14.5px;
-  font-weight: 610;
-  line-height: 1.4;
-  letter-spacing: -0.012em;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 22px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -165,32 +159,21 @@ const activeMatchNumber = computed(() => {
 .meta-row {
   display: flex;
   align-items: center;
-  gap: 10px;
   min-width: 0;
-  margin-top: 3px;
+  margin-top: 1px;
   overflow: hidden;
-}
-
-.meta-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  flex: none;
-  color: var(--text-tertiary);
-  font-size: 9.5px;
-  line-height: 1.4;
+  color: var(--text-caption);
+  font-size: 11px;
+  line-height: 16px;
   white-space: nowrap;
 }
 
-.model-chip {
-  padding: 1px 6px;
-  border-radius: 5px;
-  background: var(--brand-soft);
-  color: #5169c8;
-  font-weight: 550;
+.meta-separator {
+  margin: 0 5px;
+  color: #d0d3d8;
 }
 
-.meta-time {
+.meta-extra {
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -198,19 +181,15 @@ const activeMatchNumber = computed(() => {
 .match-nav {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 1px;
   flex: none;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--bg-muted);
 }
 
 .match-counter {
-  min-width: 48px;
+  min-width: 52px;
   padding: 0 5px;
-  color: var(--text-secondary);
-  font-size: 10px;
+  color: var(--text-tertiary);
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   text-align: center;
   white-space: nowrap;
@@ -219,16 +198,19 @@ const activeMatchNumber = computed(() => {
 .title-match-label {
   padding: 0 5px;
   color: var(--text-tertiary);
-  font-size: 10px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
 .close-search {
-  width: 26px;
-  height: 26px;
+  margin-left: 5px;
 }
 
 @media (max-width: 860px) {
+  .sidebar-toggle {
+    display: flex;
+  }
+
   .desktop-icon {
     display: none;
   }
@@ -240,34 +222,24 @@ const activeMatchNumber = computed(() => {
 
 @media (max-width: 640px) {
   .chat-header {
-    min-height: 58px;
-    padding: 0 10px 0 8px;
+    padding: 0 8px 0 4px;
   }
 
-  .header-left {
-    gap: 6px;
+  .title-block {
+    padding-left: 6px;
   }
 
   .title-block h1 {
-    font-size: 13.5px;
+    font-size: 14px;
   }
 
-  .meta-row {
-    gap: 6px;
-  }
-
-  .meta-time {
+  .meta-extra {
     display: none;
   }
 
   .match-counter {
-    min-width: 36px;
-    font-size: 9.5px;
-  }
-
-  .match-nav {
-    gap: 1px;
-    padding: 3px;
+    min-width: 40px;
+    font-size: 11px;
   }
 }
 </style>

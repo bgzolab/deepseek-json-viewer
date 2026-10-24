@@ -8,68 +8,64 @@
     'SFMono-Regular', 'Cascadia Code', 'Roboto Mono', Consolas, 'Liberation Mono', Menlo,
     monospace;
 
-  --bg-app: #f6f7fb;
-  --bg-sidebar: #f3f5f9;
+  --bg-app: #ffffff;
+  --bg-sidebar: #f9fafb;
   --bg-surface: #ffffff;
-  --bg-muted: #f4f6fa;
-  --bg-hover: #eceff5;
-  --bg-active: #e8eeff;
-  --bg-active-strong: #dfe8ff;
-  --bg-overlay: rgba(22, 27, 38, 0.38);
+  --bg-muted: #f9fafb;
+  --bg-hover: #f1f3f5;
+  --bg-active: #e4edfd;
+  --bg-active-strong: #d3e2ff;
+  --bg-overlay: rgba(0, 0, 0, 0.4);
 
-  --border: #e7e9f0;
-  --border-strong: #d9dde8;
-  --border-focus: #b9c6ff;
+  --border: rgba(0, 0, 0, 0.1);
+  --border-subtle: rgba(0, 0, 0, 0.04);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --border-focus: #b7c8fe;
 
-  --text: #1b1f27;
-  --text-secondary: #606978;
-  --text-tertiary: #939baa;
+  --text: #0f1115;
+  --text-secondary: #61666b;
+  --text-tertiary: #81858c;
+  --text-caption: #adb2b8;
   --text-inverse: #ffffff;
 
-  --brand: #4d6bfe;
-  --brand-hover: #3f5cf0;
-  --brand-pressed: #354fda;
-  --brand-soft: #edf2ff;
-  --brand-soft-strong: #dde7ff;
+  --brand: #3964fe;
+  --brand-hover: #5686fe;
+  --brand-pressed: #2e55df;
+  --brand-soft: #edf3fe;
+  --brand-soft-strong: #e4edfd;
   --brand-contrast: #ffffff;
 
-  --danger: #cf3f3f;
-  --danger-hover: #b83333;
-  --danger-soft: #fdf1f1;
-  --warning: #a86700;
-  --warning-soft: #fff6e6;
-  --success: #147a55;
-  --success-soft: #ecf9f2;
+  --danger: #ec1313;
+  --danger-hover: #c90f0f;
+  --danger-soft: #fef2f2;
+  --warning: #b7791f;
+  --warning-soft: #fffaeb;
+  --success: #15803d;
+  --success-soft: #f0fdf4;
 
-  --search-mark: #ffe58a;
-  --search-mark-current: #ffb84d;
+  --search-mark: #d3e2ff;
+  --search-mark-current: #a9c0ff;
 
-  --user-bubble: #edf2ff;
-  --user-bubble-border: #e2e9fb;
-  --assistant-avatar: linear-gradient(145deg, #6d86ff 0%, #4d6bfe 55%, #3d56e8 100%);
+  --user-bubble: #edf3fe;
+  --assistant-avatar: linear-gradient(145deg, #dce8ff 0%, #b7c8fe 100%);
 
-  --shadow-xs: 0 1px 2px rgba(25, 32, 56, 0.04);
-  --shadow-sm: 0 4px 14px -8px rgba(25, 32, 56, 0.12);
-  --shadow-md: 0 18px 50px -20px rgba(25, 32, 56, 0.22);
-  --shadow-lg: 0 30px 80px -24px rgba(25, 32, 56, 0.32);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.12);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
-  --radius-pill: 999px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 100px;
 
-  --sidebar-width: 288px;
-  --header-height: 66px;
-  --content-width: 840px;
+  --sidebar-width: 260px;
+  --header-height: 60px;
+  --content-width: 752px;
+  --composer-width: 776px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --transition-fast: 140ms var(--ease-out);
-  --transition-base: 220ms var(--ease-out);
-}
-
-@media (max-width: 900px) {
-  :root {
-    --header-height: 60px;
-  }
+  --transition-fast: 140ms ease;
+  --transition-base: 200ms ease;
 }

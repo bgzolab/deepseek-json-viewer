@@ -5,20 +5,34 @@ import AppIcon from './AppIcon.vue'
 <template>
   <footer class="composer-area">
     <div class="composer" aria-disabled="true">
-      <div class="composer-main">
-        <button type="button" class="composer-tool" disabled tabindex="-1" aria-label="上传附件">
-          <AppIcon name="plus" :size="18" />
-        </button>
-        <div class="composer-placeholder">预览模式，暂不支持发送消息</div>
-        <button type="button" class="composer-send" disabled tabindex="-1" aria-label="发送">
-          <AppIcon name="arrow-up" :size="18" :stroke-width="2" />
-        </button>
+      <div class="composer-input">
+        <span>预览模式，暂不支持发送消息</span>
+      </div>
+
+      <div class="composer-toolbar">
+        <div class="composer-modes">
+          <span class="mode-chip">
+            <AppIcon name="shield" :size="13" />
+            只读预览
+          </span>
+          <span class="mode-chip">
+            <AppIcon name="database" :size="13" />
+            本地数据
+          </span>
+        </div>
+
+        <div class="composer-actions">
+          <button type="button" class="composer-tool" disabled tabindex="-1" aria-label="上传附件">
+            <AppIcon name="paperclip" :size="17" />
+          </button>
+          <button type="button" class="composer-send" disabled tabindex="-1" aria-label="发送">
+            <AppIcon name="arrow-up" :size="17" :stroke-width="2" />
+          </button>
+        </div>
       </div>
     </div>
-    <p class="composer-hint">
-      <AppIcon name="shield" :size="12" />
-      本地预览模式 · 不会发送任何请求
-    </p>
+
+    <p class="composer-hint">本地预览模式 · 不会发送任何请求</p>
   </footer>
 </template>
 
@@ -28,28 +42,71 @@ import AppIcon from './AppIcon.vue'
   z-index: 5;
   flex: none;
   width: 100%;
-  padding: 10px 20px calc(13px + env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #ffffff 34%);
+  padding: 10px 20px calc(9px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg-surface);
 }
 
 .composer {
-  width: min(100%, var(--content-width));
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--composer-width);
+  min-height: 124px;
   margin: 0 auto;
-  padding: 7px;
-  border: 1px solid #e2e6ef;
-  border-radius: 22px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
   background: var(--bg-surface);
-  box-shadow:
-    0 8px 28px -20px rgba(31, 41, 72, 0.3),
-    0 1px 2px rgba(31, 41, 72, 0.03);
 }
 
-.composer-main {
+.composer-input {
+  display: flex;
+  align-items: flex-start;
+  min-height: 58px;
+  flex: 1;
+  padding: 12px 16px 0;
+}
+
+.composer-input span {
+  color: var(--text-caption);
+  font-size: 16px;
+  line-height: 24px;
+  user-select: none;
+}
+
+.composer-toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 10px 10px 12px;
+}
+
+.composer-modes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mode-chip {
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
-  min-height: 42px;
-  padding: 0 2px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 100px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 12px;
+  line-height: 30px;
+  white-space: nowrap;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
 }
 
 .composer-tool {
@@ -58,18 +115,8 @@ import AppIcon from './AppIcon.vue'
   justify-content: center;
   width: 34px;
   height: 34px;
-  flex: none;
   border-radius: 50%;
-  color: #a5adbb;
-}
-
-.composer-placeholder {
-  flex: 1;
-  padding: 0 9px;
-  color: #9aa2b1;
-  font-size: 14px;
-  line-height: 1.4;
-  user-select: none;
+  color: var(--text-caption);
 }
 
 .composer-send {
@@ -78,39 +125,54 @@ import AppIcon from './AppIcon.vue'
   justify-content: center;
   width: 34px;
   height: 34px;
-  flex: none;
   border-radius: 50%;
-  background: #eef1f6;
-  color: #b4bcc9;
+  background: var(--brand);
+  color: white;
+  opacity: 0.42;
 }
 
 .composer-hint {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
   margin: 7px 0 0;
-  color: var(--text-tertiary);
-  font-size: 10.5px;
-  letter-spacing: 0.01em;
+  color: var(--text-caption);
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
 }
 
 @media (max-width: 640px) {
   .composer-area {
-    padding: 8px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
   }
 
   .composer {
-    border-radius: 19px;
+    min-height: 102px;
+    border-radius: 20px;
   }
 
-  .composer-main {
-    min-height: 40px;
+  .composer-input {
+    min-height: 50px;
+    padding: 10px 13px 0;
+  }
+
+  .composer-input span {
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .composer-toolbar {
+    padding: 2px 8px 8px 10px;
+  }
+
+  .mode-chip {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 11px;
+    line-height: 28px;
   }
 
   .composer-hint {
     margin-top: 5px;
-    font-size: 10px;
+    font-size: 11px;
   }
 }
 </style>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { StoredConversation } from '../types/chat'
+import { avatarUrl } from '../lib/assets'
 import { relativeGroup } from '../lib/time'
 import { useChatStore } from '../stores/chatStore'
 import AppIcon from './AppIcon.vue'
-import BrandMark from './BrandMark.vue'
 import ConversationListItem from './ConversationListItem.vue'
 
 const emit = defineEmits<{
@@ -15,6 +15,7 @@ const emit = defineEmits<{
 
 const store = useChatStore()
 const searchInput = ref<HTMLInputElement | null>(null)
+const searchOpen = ref(false)
 
 const groups = computed<Array<{ label: string; items: StoredConversation[] }>>(() => {
   const conversations = store.visibleConversations.value
@@ -47,9 +48,14 @@ function onQueryInput(event: Event): void {
   store.setQuery(target.value)
 }
 
-function clearSearch(): void {
+function clearSearch(close = false): void {
   store.clearQuery()
-  searchInput.value?.focus()
+  if (close) {
+    searchOpen.value = false
+    searchInput.value?.blur()
+  } else {
+    searchInput.value?.focus()
+  }
 }
 
 function closeSidebar(): void {
@@ -62,11 +68,7 @@ function closeSidebar(): void {
 
 function onSearchKeydown(event: KeyboardEvent): void {
   if (event.key === 'Escape') {
-    if (store.state.query) {
-      clearSearch()
-    } else {
-      searchInput.value?.blur()
-    }
+    clearSearch(true)
   }
 }
 
@@ -76,6 +78,7 @@ async function focusSearch(): Promise<void> {
   } else if (store.state.sidebarCollapsed) {
     store.toggleSidebar()
   }
+  searchOpen.value = true
   await nextTick()
   searchInput.value?.focus()
   searchInput.value?.select()
@@ -94,70 +97,78 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
 
 <template>
   <aside class="sidebar" aria-label="会话列表">
-    <header class="sidebar-header">
+    <header class="sidebar-top">
       <div class="brand-row">
-        <BrandMark :size="36" />
+        <img class="brand-avatar" :src="avatarUrl" alt="DeepSeek 助手头像" />
         <div class="brand-copy">
-          <div class="brand-title">
-            对话预览
-            <span class="local-badge">本地</span>
-          </div>
-          <div class="brand-subtitle">DEEPSEEK JSON VIEWER</div>
+          <span class="brand-word">deepseek</span>
+          <span class="brand-sub">对话预览</span>
         </div>
-        <button
-          type="button"
-          class="icon-button sidebar-collapse"
-          aria-label="收起侧边栏"
-          title="收起侧边栏"
-          @click="store.toggleSidebar"
-        >
-          <AppIcon name="sidebar" :size="17" />
-        </button>
-        <button
-          type="button"
-          class="icon-button sidebar-close"
-          aria-label="关闭侧边栏"
-          @click="closeSidebar"
-        >
-          <AppIcon name="x" :size="18" />
-        </button>
+        <div class="top-actions">
+          <button
+            type="button"
+            class="icon-button top-action"
+            :class="{ 'is-active': searchOpen || store.state.query }"
+            aria-label="搜索"
+            title="搜索（⌘K）"
+            @click="focusSearch"
+          >
+            <AppIcon name="search" :size="16" />
+          </button>
+          <button
+            type="button"
+            class="icon-button top-action sidebar-collapse"
+            aria-label="收起侧边栏"
+            title="收起侧边栏"
+            @click="store.toggleSidebar"
+          >
+            <AppIcon name="sidebar" :size="16" />
+          </button>
+          <button
+            type="button"
+            class="icon-button top-action sidebar-close"
+            aria-label="关闭侧边栏"
+            @click="closeSidebar"
+          >
+            <AppIcon name="x" :size="17" />
+          </button>
+        </div>
       </div>
 
-      <button type="button" class="import-button" @click="emit('import')">
-        <span class="import-icon"><AppIcon name="plus" :size="16" /></span>
-        <span>导入 JSON 文件</span>
-        <span class="import-hint">可多选</span>
+      <button type="button" class="new-chat-button" @click="emit('import')">
+        <AppIcon name="plus" :size="16" />
+        <span>导入聊天记录</span>
       </button>
 
-      <div class="search-wrap" :class="{ 'has-query': store.state.query }">
-        <AppIcon name="search" :size="15" class="search-icon" />
-        <input
-          ref="searchInput"
-          type="search"
-          class="search-input"
-          placeholder="搜索标题或消息内容"
-          aria-label="搜索标题或消息内容"
-          autocomplete="off"
-          spellcheck="false"
-          :value="store.state.query"
-          @input="onQueryInput"
-          @keydown="onSearchKeydown"
-        />
-        <button
-          v-if="store.state.query"
-          type="button"
-          class="search-clear"
-          aria-label="清空搜索"
-          @click="clearSearch"
-        >
-          <AppIcon name="x" :size="13" />
-        </button>
-        <kbd v-else class="search-kbd">⌘ K</kbd>
-      </div>
+      <Transition name="search-field">
+        <div v-if="searchOpen || store.state.query" class="search-wrap">
+          <AppIcon name="search" :size="14" class="search-icon" />
+          <input
+            ref="searchInput"
+            type="search"
+            class="search-input"
+            placeholder="搜索会话和消息"
+            aria-label="搜索会话和消息"
+            autocomplete="off"
+            spellcheck="false"
+            :value="store.state.query"
+            @input="onQueryInput"
+            @keydown="onSearchKeydown"
+          />
+          <button
+            type="button"
+            class="search-clear"
+            aria-label="关闭搜索"
+            @click="clearSearch(true)"
+          >
+            <AppIcon name="x" :size="13" />
+          </button>
+        </div>
+      </Transition>
 
       <p v-if="store.normalizedQuery.value" class="search-summary">
         <template v-if="resultCount > 0">
-          找到 <strong>{{ resultCount }}</strong> 个会话 · <strong>{{ matchCount }}</strong> 处匹配
+          {{ resultCount }} 个会话 · {{ matchCount }} 处匹配
         </template>
         <template v-else>没有找到匹配内容</template>
       </p>
@@ -166,10 +177,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
     <div class="conversation-scroll">
       <nav v-if="groups.length > 0" class="conversation-groups" aria-label="会话">
         <section v-for="group in groups" :key="group.label" class="conversation-group">
-          <h2 class="group-label">
-            {{ group.label }}
-            <span>{{ group.items.length }}</span>
-          </h2>
+          <h2 class="group-label">{{ group.label }}</h2>
           <div class="conversation-list">
             <ConversationListItem
               v-for="conversation in group.items"
@@ -186,41 +194,35 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
       </nav>
 
       <div v-else-if="store.normalizedQuery.value" class="list-empty">
-        <div class="list-empty-icon"><AppIcon name="search" :size="19" /></div>
         <strong>没有找到相关会话</strong>
-        <p>换一个更短的关键词，或清空搜索后浏览全部记录。</p>
-        <button type="button" class="btn btn-soft btn-sm" @click="clearSearch">清空搜索</button>
+        <p>换一个关键词，或清空搜索后浏览全部记录。</p>
+        <button type="button" class="text-action" @click="clearSearch()">清空搜索</button>
       </div>
 
       <div v-else class="list-empty">
-        <div class="list-empty-icon"><AppIcon name="message" :size="19" /></div>
-        <strong>还没有导入记录</strong>
-        <p>选择一个 DeepSeek 导出的 JSON 文件，开始本地预览。</p>
-        <button type="button" class="btn btn-soft btn-sm" @click="emit('import')">导入文件</button>
+        <strong>还没有会话</strong>
+        <p>导入 DeepSeek 导出的 JSON 文件后，会话会显示在这里。</p>
+        <button type="button" class="text-action" @click="emit('import')">导入文件</button>
       </div>
     </div>
 
     <footer class="sidebar-footer">
-      <div class="storage-card">
-        <div class="storage-head">
-          <span class="storage-icon"><AppIcon name="database" :size="15" /></span>
-          <div>
-            <strong>本地缓存</strong>
-            <span>{{ store.state.conversations.length }} 个会话 · {{ store.totalMessages.value }} 条消息</span>
-          </div>
-          <button
-            type="button"
-            class="clear-button"
-            :disabled="!store.hasConversations.value"
-            @click="emit('request-clear')"
-          >
-            清空
-          </button>
+      <div class="storage-row" title="数据仅保存在当前浏览器的 IndexedDB 中">
+        <span class="storage-icon"><AppIcon name="database" :size="16" /></span>
+        <div class="storage-copy">
+          <span class="storage-title">本地缓存</span>
+          <span class="storage-meta">
+            {{ store.state.conversations.length }} 个会话 · {{ store.totalMessages.value }} 条消息
+          </span>
         </div>
-        <p class="privacy-note">
-          <AppIcon name="shield" :size="11" />
-          数据仅保存在当前浏览器
-        </p>
+        <button
+          type="button"
+          class="clear-button"
+          :disabled="!store.hasConversations.value"
+          @click="emit('request-clear')"
+        >
+          清空
+        </button>
       </div>
     </footer>
   </aside>
@@ -233,146 +235,134 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-right: 1px solid var(--border);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 120px),
-    var(--bg-sidebar);
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-sidebar);
 }
 
-.sidebar-header {
+.sidebar-top {
   flex: none;
-  padding: 16px 13px 10px;
+  padding: 6px 12px 0;
 }
 
 .brand-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 2px 2px 16px 3px;
+  gap: 9px;
+  height: 50px;
+  padding: 10px 2px 8px 4px;
+  margin-bottom: 12px;
+}
+
+.brand-avatar {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  background: #111;
+  object-fit: cover;
 }
 
 .brand-copy {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   min-width: 0;
   flex: 1;
+  white-space: nowrap;
 }
 
-.brand-title {
+.brand-word {
+  color: var(--brand);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 23px;
+  letter-spacing: -0.03em;
+}
+
+.brand-sub {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.top-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #202531;
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
+  gap: 2px;
+  flex: none;
+  margin-left: auto;
 }
 
-.local-badge {
-  padding: 1px 5px;
-  border: 1px solid #dbe4ff;
-  border-radius: 5px;
-  background: var(--brand-soft);
-  color: var(--brand-pressed);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-
-.brand-subtitle {
-  margin-top: 2px;
-  color: var(--text-tertiary);
-  font-size: 8.5px;
-  font-weight: 560;
-  letter-spacing: 0.12em;
-}
-
-.sidebar-collapse {
+.top-action {
   width: 30px;
   height: 30px;
+  border-radius: 8px;
+}
+
+.top-action.is-active {
+  background: var(--bg-hover);
+  color: var(--text);
 }
 
 .sidebar-close {
   display: none;
-  width: 30px;
-  height: 30px;
 }
 
-.import-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 40px;
-  padding: 0 10px;
-  border: 1px solid #dfe6fb;
-  border-radius: 11px;
-  background: linear-gradient(180deg, #fbfcff, #f0f4ff);
-  color: #354698;
-  font-size: 12.5px;
-  font-weight: 580;
-  text-align: left;
-  box-shadow: 0 4px 12px -10px rgba(55, 79, 174, 0.5);
-  transition:
-    border-color var(--transition-fast),
-    background-color var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.import-button:hover {
-  border-color: #cbd8f9;
-  background: #f5f8ff;
-  box-shadow: 0 8px 18px -14px rgba(55, 79, 174, 0.6);
-}
-
-.import-icon {
+.new-chat-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 23px;
-  height: 23px;
-  flex: none;
-  border-radius: 7px;
-  background: var(--brand);
-  color: white;
-  box-shadow: 0 4px 10px -6px rgba(77, 107, 254, 0.9);
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(103, 158, 254, 0);
+  border-radius: 100px;
+  background: var(--bg-surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow:
+    0 -2px 2px rgba(72, 104, 178, 0.04),
+    0 1px 2px rgba(72, 104, 178, 0.04),
+    0 2px 8px rgba(72, 104, 178, 0.04);
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
-.import-hint {
-  margin-left: auto;
-  color: #96a1c0;
-  font-size: 9.5px;
-  font-weight: 500;
+.new-chat-button:hover {
+  border-color: var(--border);
+  background: #fcfcfd;
 }
 
 .search-wrap {
   display: flex;
   align-items: center;
   gap: 7px;
-  height: 36px;
-  margin-top: 10px;
+  height: 34px;
+  margin-top: 9px;
   padding: 0 9px;
   border: 1px solid transparent;
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.72);
+  background: transparent;
   transition:
     border-color var(--transition-fast),
-    background-color var(--transition-fast),
-    box-shadow var(--transition-fast);
+    background-color var(--transition-fast);
 }
 
 .search-wrap:hover {
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--bg-hover);
 }
 
 .search-wrap:focus-within {
-  border-color: var(--border-focus);
+  border-color: var(--border);
   background: var(--bg-surface);
-  box-shadow: 0 0 0 3px rgba(77, 107, 254, 0.08);
 }
 
 .search-icon {
   flex: none;
-  color: #9aa3b3;
+  color: var(--text-tertiary);
 }
 
 .search-input {
@@ -382,26 +372,15 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
   outline: 0;
   background: transparent;
   color: var(--text);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .search-input::placeholder {
-  color: #9aa3b3;
+  color: var(--text-caption);
 }
 
 .search-input::-webkit-search-cancel-button {
   display: none;
-}
-
-.search-kbd {
-  flex: none;
-  padding: 1px 5px;
-  border: 1px solid #e0e4ed;
-  border-radius: 4px;
-  background: #f7f8fb;
-  color: #a0a8b6;
-  font-size: 9px;
-  line-height: 1.5;
 }
 
 .search-clear {
@@ -412,7 +391,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
   height: 20px;
   flex: none;
   border-radius: 5px;
-  color: #939cab;
+  color: var(--text-tertiary);
 }
 
 .search-clear:hover {
@@ -421,140 +400,138 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
 }
 
 .search-summary {
-  margin: 7px 3px 0;
+  margin: 3px 10px 0;
   color: var(--text-tertiary);
-  font-size: 10px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 18px;
 }
 
-.search-summary strong {
-  color: var(--text-secondary);
-  font-weight: 600;
+.search-field-enter-active,
+.search-field-leave-active {
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.search-field-enter-from,
+.search-field-leave-to {
+  opacity: 0;
+  transform: translateY(-3px);
 }
 
 .conversation-scroll {
   min-height: 0;
   flex: 1;
   overflow-y: auto;
-  padding: 2px 9px 14px;
+  padding: 18px 12px 12px;
   overscroll-behavior: contain;
 }
 
 .conversation-group + .conversation-group {
-  margin-top: 12px;
+  margin-top: 16px;
 }
 
 .group-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
   margin: 0;
-  padding: 7px 7px 5px;
-  color: #9aa3b2;
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.group-label span {
-  padding: 0 4px;
-  border-radius: 4px;
-  background: rgba(146, 156, 174, 0.1);
-  font-size: 9px;
+  padding: 2px 10px;
+  background: var(--bg-sidebar);
+  color: var(--text-tertiary);
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0;
+  line-height: 18px;
 }
 
 .conversation-list {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
+  padding-top: 4px;
 }
 
 .list-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 44px auto 0;
+  margin-top: 54px;
   padding: 0 18px;
   text-align: center;
 }
 
-.list-empty-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  margin-bottom: 12px;
-  border: 1px solid #e1e6f1;
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.7);
-  color: #9ba6ba;
-}
-
 .list-empty strong {
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .list-empty p {
-  margin: 5px 0 12px;
+  margin: 5px 0 9px;
   color: var(--text-tertiary);
-  font-size: 11px;
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.text-action {
+  padding: 3px 6px;
+  border-radius: 6px;
+  color: var(--brand);
+  font-size: 12px;
+}
+
+.text-action:hover {
+  background: var(--brand-soft);
 }
 
 .sidebar-footer {
   flex: none;
-  padding: 9px 10px 12px;
-  border-top: 1px solid rgba(225, 229, 238, 0.75);
+  padding: 0 12px 10px;
 }
 
-.storage-card {
-  padding: 10px 11px 8px;
-  border: 1px solid rgba(225, 230, 240, 0.9);
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.55);
-}
-
-.storage-head {
+.storage-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  height: 44px;
+  padding: 6px 8px 6px 6px;
+  border-radius: 12px;
+  transition: background-color var(--transition-fast);
+}
+
+.storage-row:hover {
+  background: var(--bg-hover);
 }
 
 .storage-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   flex: none;
-  border-radius: 8px;
-  background: #eef1f7;
-  color: #7b8699;
+  border-radius: 50%;
+  background: var(--bg-hover);
+  color: var(--text-tertiary);
 }
 
-.storage-head > div {
+.storage-copy {
   display: flex;
+  min-width: 0;
   flex: 1;
   flex-direction: column;
-  min-width: 0;
-}
-
-.storage-head strong {
-  font-size: 11px;
-  font-weight: 600;
   line-height: 1.4;
 }
 
-.storage-head span {
+.storage-title {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.storage-meta {
   overflow: hidden;
   color: var(--text-tertiary);
-  font-size: 9.5px;
-  line-height: 1.4;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -563,30 +540,17 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
   flex: none;
   padding: 4px 7px;
   border-radius: 6px;
-  color: var(--danger);
-  font-size: 10px;
-  font-weight: 550;
-  transition: background-color var(--transition-fast);
+  color: var(--text-tertiary);
+  font-size: 11px;
 }
 
 .clear-button:hover:not(:disabled) {
   background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .clear-button:disabled {
-  color: var(--text-tertiary);
-  opacity: 0.5;
-}
-
-.privacy-note {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin: 7px 0 0;
-  padding-top: 6px;
-  border-top: 1px solid #eceff5;
-  color: #a2aab8;
-  font-size: 9px;
+  opacity: 0.45;
 }
 
 @media (max-width: 860px) {
@@ -600,10 +564,6 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
 
   .sidebar {
     box-shadow: var(--shadow-md);
-  }
-
-  .search-kbd {
-    display: none;
   }
 }
 </style>
