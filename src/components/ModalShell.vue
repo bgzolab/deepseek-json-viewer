@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { acquireModalInert, releaseModalInert } from '../lib/modalStack'
 import AppIcon from './AppIcon.vue'
 
 const props = withDefaults(
@@ -23,6 +24,8 @@ const emit = defineEmits<{
 }>()
 
 const panel = ref<HTMLElement | null>(null)
+let inertHeld = false
+let returnFocusTo: HTMLElement | null = null
 
 function requestClose(): void {
   if (!props.dismissible) return
@@ -39,15 +42,35 @@ function onKeydown(event: KeyboardEvent): void {
 
 watch(
   () => props.open,
-  async (open) => {
+  async (open, wasOpen) => {
+    if (open && !inertHeld) {
+      returnFocusTo =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null
+      inertHeld = true
+      acquireModalInert()
+    } else if (!open && wasOpen && inertHeld) {
+      inertHeld = false
+      releaseModalInert()
+      await nextTick()
+      returnFocusTo?.focus()
+      returnFocusTo = null
+    }
+
     if (!open) return
     await nextTick()
     panel.value?.focus()
   },
+  { immediate: true },
 )
 
 document.addEventListener('keydown', onKeydown)
-onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', onKeydown)
+  if (inertHeld) {
+    inertHeld = false
+    releaseModalInert()
+  }
+})
 </script>
 
 <template>

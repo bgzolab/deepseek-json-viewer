@@ -221,11 +221,6 @@
   border-bottom: 0;
 }
 
-.markdown-body img {
-  max-width: 100%;
-  border-radius: 8px;
-}
-
 .markdown-body .md-image-placeholder {
   display: inline-flex;
   align-items: center;
