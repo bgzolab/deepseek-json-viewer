@@ -114,6 +114,9 @@ function applyReferencesToHtml(html: string, references?: ChatReference[]): stri
         anchor.rel = 'noopener noreferrer nofollow'
         anchor.textContent = String(index + 1)
         fragment.appendChild(anchor)
+      } else {
+        // Keep unresolved markers visible instead of silently deleting user text.
+        fragment.appendChild(doc.createTextNode(match[0]))
       }
 
       cursor = match.index + match[0].length

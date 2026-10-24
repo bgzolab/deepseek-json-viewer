@@ -82,6 +82,36 @@ describe('parseExport', () => {
     expect(conversation.fingerprint).toMatch(/^[a-f0-9]{32}$/)
   })
 
+  it('keeps reference result positions stable for duplicates and invalid URLs', () => {
+    const conversation = firstConversation({
+      id: 'reference-positions',
+      messages: [
+        {
+          id: 'a1',
+          fragments: [
+            { type: 'RESPONSE', content: '[reference:0][reference:1][reference:2][reference:3]' },
+            {
+              type: 'TOOL_SEARCH',
+              results: [
+                { title: 'duplicate one', url: 'https://example.com/duplicate' },
+                { title: 'duplicate two', url: 'https://example.com/duplicate' },
+                { title: 'unsafe', url: 'javascript:alert(1)' },
+                { title: 'fourth', url: 'https://example.com/fourth' },
+              ],
+            },
+          ],
+        },
+      ],
+    })
+
+    const references = conversation.messages[0]?.references
+    expect(references).toHaveLength(4)
+    expect(references?.[0]?.url).toBe('https://example.com/duplicate')
+    expect(references?.[1]?.url).toBe('https://example.com/duplicate')
+    expect(references?.[2]?.url).toBe('')
+    expect(references?.[3]?.url).toBe('https://example.com/fourth')
+  })
+
   it('respects current_node when it is present', () => {
     const root = {
       id: 'current-node',

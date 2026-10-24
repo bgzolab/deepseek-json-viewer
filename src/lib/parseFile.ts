@@ -12,6 +12,8 @@ interface WorkerFailure {
 
 type WorkerResponse = WorkerSuccess | WorkerFailure
 
+const WORKER_TIMEOUT_MS = 60_000
+
 async function parseOnMainThread(file: File): Promise<ParseResult> {
   const text = await file.text()
   return parseExportText(text, file.name)
@@ -34,19 +36,32 @@ export async function parseFile(file: File): Promise<ParseResult> {
     }
 
     let settled = false
+    let watchdog: number | undefined
+
+    const clearWatchdog = (): void => {
+      if (watchdog !== undefined) {
+        window.clearTimeout(watchdog)
+        watchdog = undefined
+      }
+    }
+
     const finish = (callback: () => void): void => {
       if (settled) return
       settled = true
+      clearWatchdog()
       worker.terminate()
       callback()
     }
 
-    // If the worker chunk itself cannot load (for example while offline), parse on the main
-    // thread instead of failing the import. Parse errors returned by the worker still reject.
+    // If the worker chunk cannot load, stalls, or gets reclaimed, parse on the main thread
+    // instead of leaving the import permanently locked. Parse errors returned by the worker
+    // still reject as parse errors.
     let fallbackStarted = false
-    const fallbackToMainThread = (): void => {
+    const fallbackToMainThread = (terminateWorker = false): void => {
       if (fallbackStarted || settled) return
       fallbackStarted = true
+      clearWatchdog()
+      if (terminateWorker) worker.terminate()
       void parseOnMainThread(file).then(
         (result) => finish(() => resolve(result)),
         (error: unknown) => finish(() => reject(error)),
@@ -54,6 +69,7 @@ export async function parseFile(file: File): Promise<ParseResult> {
     }
 
     worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      if (fallbackStarted) return
       const response = event.data
       if (response.ok) {
         finish(() => resolve(response.result))
@@ -65,13 +81,16 @@ export async function parseFile(file: File): Promise<ParseResult> {
     }
 
     worker.onerror = () => {
-      if (!settled) fallbackToMainThread()
+      fallbackToMainThread(true)
     }
 
     worker.onmessageerror = () => {
-      if (!settled) fallbackToMainThread()
+      fallbackToMainThread(true)
     }
 
     worker.postMessage({ file })
+    watchdog = window.setTimeout(() => {
+      fallbackToMainThread(true)
+    }, WORKER_TIMEOUT_MS)
   })
 }

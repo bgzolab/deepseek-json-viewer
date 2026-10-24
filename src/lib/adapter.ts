@@ -376,7 +376,6 @@ function extractFragments(message: JsonRecord): {
   const reasoningParts: string[] = []
   const references: ChatReference[] = []
   const attachments: ChatAttachment[] = []
-  const seenReferenceUrls = new Set<string>()
 
   for (const fragment of fragments) {
     if (!isRecord(fragment)) continue
@@ -421,13 +420,15 @@ function extractFragments(message: JsonRecord): {
     if (type === 'TOOL_SEARCH' || type === 'SEARCH' || type === 'SEARCH_RESULT') {
       const results = Array.isArray(fragment.results) ? fragment.results : []
       for (const result of results) {
-        if (!isRecord(result)) continue
-        const url = coerceString(result.url ?? result.link ?? result.href).trim()
-        if (!url || !isHttpUrl(url) || seenReferenceUrls.has(url)) continue
-        seenReferenceUrls.add(url)
-        const title = coerceString(result.title ?? result.name).trim() || url
-        references.push({ title, url })
-        if (references.length >= 30) break
+        // Keep one entry per result position. Reference markers index into this array,
+        // so filtering or de-duplicating here would shift every later citation.
+        if (!isRecord(result)) {
+          references.push({ title: '', url: '' })
+          continue
+        }
+        const rawUrl = coerceString(result.url ?? result.link ?? result.href).trim()
+        const title = coerceString(result.title ?? result.name).trim() || rawUrl
+        references.push({ title, url: isHttpUrl(rawUrl) ? rawUrl : '' })
       }
       continue
     }

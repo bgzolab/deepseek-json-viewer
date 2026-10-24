@@ -83,11 +83,11 @@ function mergeMessages(
     return { messages: filledSomething ? filled : existingMessages, added: 0 }
   }
 
-  const existingKeys = new Set(existingMessages.map(messageIdentity))
   const incomingKeys = new Set(incomingMessages.map(messageIdentity))
   const existingIsSubset = existingMessages.every((message) => incomingKeys.has(messageIdentity(message)))
-  const incomingIsSubset = incomingMessages.every((message) => existingKeys.has(messageIdentity(message)))
 
+  // When incomingOnly is non-empty, at least one incoming message is not in existing,
+  // so the reverse-subset case cannot occur here.
   if (existingIsSubset && incomingMessages.length >= existingMessages.length) {
     const merged = incomingMessages.map((message) => {
       const existing =
@@ -96,19 +96,6 @@ function mergeMessages(
       return existing ? mergeMessageContent(existing, message) : message
     })
     return { messages: merged, added }
-  }
-
-  if (incomingIsSubset) {
-    let filledSomething = false
-    const merged = existingMessages.map((message) => {
-      const incoming =
-        incomingById.get(message.id) ?? incomingByFingerprint.get(messageIdentity(message))
-      if (!incoming) return message
-      const filled = mergeMessageContent(message, incoming)
-      if (filled !== message) filledSomething = true
-      return filled
-    })
-    return { messages: filledSomething ? merged : existingMessages, added: 0 }
   }
 
   return {

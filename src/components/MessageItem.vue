@@ -49,15 +49,19 @@ const reasoningStartIndex = computed(
   () => Math.max(0, props.searchStartIndex) + contentMatchCount.value,
 )
 
-const safeReferences = computed(() =>
-  (props.message.references ?? []).filter((reference) => {
-    try {
-      const url = new URL(reference.url)
-      return url.protocol === 'http:' || url.protocol === 'https:'
-    } catch {
-      return false
-    }
-  }),
+const messageReferences = computed(() => props.message.references ?? [])
+
+const visibleReferences = computed(() =>
+  messageReferences.value
+    .map((reference, index) => ({ reference, index }))
+    .filter(({ reference }) => {
+      try {
+        const url = new URL(reference.url)
+        return url.protocol === 'http:' || url.protocol === 'https:'
+      } catch {
+        return false
+      }
+    }),
 )
 
 const hasBody = computed(
@@ -65,7 +69,7 @@ const hasBody = computed(
     Boolean(props.message.content.trim()) ||
     Boolean(props.message.reasoning?.trim()) ||
     Boolean(props.message.attachments?.length) ||
-    safeReferences.value.length > 0,
+    visibleReferences.value.length > 0,
 )
 
 const copyState = ref<'idle' | 'copied' | 'failed'>('idle')
@@ -184,7 +188,7 @@ function onReasoningToggle(event: Event): void {
       <MarkdownBody
         v-if="message.content.trim()"
         :text="message.content"
-        :references="safeReferences"
+        :references="messageReferences"
         :query="query"
         :search-start-index="searchStartIndex"
       />
@@ -201,16 +205,19 @@ function onReasoningToggle(event: Event): void {
         </span>
       </div>
 
-      <details v-if="safeReferences.length" class="references">
+      <details v-if="visibleReferences.length" class="references">
         <summary>
           参考来源
-          <span>{{ safeReferences.length }}</span>
+          <span>{{ visibleReferences.length }}</span>
         </summary>
         <ol>
-          <li v-for="(reference, referenceIndex) in safeReferences" :key="reference.url">
-            <a :href="reference.url" target="_blank" rel="noopener noreferrer nofollow">
-              <span class="reference-index">{{ referenceIndex + 1 }}</span>
-              <HighlightText :text="reference.title" :query="query" />
+          <li
+            v-for="item in visibleReferences"
+            :key="`${item.index}-${item.reference.url}`"
+          >
+            <a :href="item.reference.url" target="_blank" rel="noopener noreferrer nofollow">
+              <span class="reference-index">{{ item.index + 1 }}</span>
+              <HighlightText :text="item.reference.title" :query="query" />
             </a>
           </li>
         </ol>
