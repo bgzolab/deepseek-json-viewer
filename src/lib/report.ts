@@ -385,12 +385,14 @@ export function buildMarkdownReport(
     `| ${t('report.metric')} | ${t('report.value')} |`,
     '| --- | --- |',
     `| ${t('report.conversationCount')} | ${formatNumber(stats.conversationCount)} |`,
-    `| ${t('report.messagesRow', {
+    `| ${t('report.messageCount')} | ${t('report.messagesBreakdown', {
       total: stats.messageCount,
       user: stats.userMessageCount,
       assistant: stats.assistantMessageCount,
     })} |`,
-    `| ${t('report.charactersRow', { count: stats.characterCount })} |`,
+    `| ${t('report.characters')} | ${t('report.charactersValue', {
+      count: stats.characterCount,
+    })} |`,
     `| ${t('report.timeSpan')} | ${timeSpan} |`,
     '',
     t('report.summary', {

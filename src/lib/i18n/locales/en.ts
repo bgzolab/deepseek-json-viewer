@@ -382,9 +382,9 @@ export const en = {
   'report.value': 'Value',
   'report.conversationCount': 'Conversations',
   'report.messageCount': 'Messages',
-  'report.messagesRow': 'Messages | {total} (me {user} / DeepSeek {assistant})',
+  'report.messagesBreakdown': '{total} (me {user} / DeepSeek {assistant})',
   'report.characters': 'Characters',
-  'report.charactersRow': 'Characters | {count} (including reasoning)',
+  'report.charactersValue': '{count} (including reasoning)',
   'report.timeSpan': 'Time span',
   'report.timeSpanValue': {
     one: '{days} day ({from} – {to})',

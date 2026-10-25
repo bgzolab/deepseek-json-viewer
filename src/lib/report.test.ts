@@ -130,6 +130,7 @@ describe('computeChatReport', () => {
 
     expect(markdown).toContain('# DeepSeek Chat Statistics')
     expect(markdown).toContain('| Conversations | 2 |')
+    expect(markdown).toContain('| Messages | 5 (me 2 / DeepSeek 3) |')
     expect(markdown).toContain('Jan 2, 2026')
     expect(markdown).not.toMatch(/\{\w+\}/)
     expect(csv).toContain('Conversation,Model,Started at,Messages,Characters,Duration')
