@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import type { ChatMessage } from '../types/chat'
 import { avatarUrl } from '../lib/assets'
 import { copyText } from '../lib/clipboard'
+import { t } from '../lib/i18n'
 import { countOccurrences } from '../lib/search'
 import { formatDateTime, formatFileSize } from '../lib/time'
 import AppIcon from './AppIcon.vue'
@@ -100,8 +101,8 @@ function onReasoningToggle(event: Event): void {
     :data-message-id="message.id"
   >
     <div class="system-box">
-      <span class="system-label">系统消息</span>
-      <p v-if="!message.content.trim()" class="empty-content">空消息</p>
+      <span class="system-label">{{ t('message.system') }}</span>
+      <p v-if="!message.content.trim()" class="empty-content">{{ t('message.empty') }}</p>
       <MarkdownBody
         v-else
         :text="message.content"
@@ -125,7 +126,9 @@ function onReasoningToggle(event: Event): void {
           :query="query"
           :search-start-index="searchStartIndex"
         />
-        <p v-else-if="!message.attachments?.length" class="empty-content">空消息</p>
+        <p v-else-if="!message.attachments?.length" class="empty-content">
+          {{ t('message.empty') }}
+        </p>
 
         <div v-if="message.attachments?.length" class="attachment-list">
           <span
@@ -146,8 +149,8 @@ function onReasoningToggle(event: Event): void {
           type="button"
           class="message-action"
           :class="{ 'is-copied': copyState === 'copied' }"
-          :aria-label="copyState === 'copied' ? '已复制消息' : '复制消息'"
-          :title="copyState === 'copied' ? '已复制' : '复制消息'"
+          :aria-label="copyState === 'copied' ? t('message.copied') : t('message.copy')"
+          :title="copyState === 'copied' ? t('message.copiedTitle') : t('message.copyTitle')"
           @click="copyMessage"
         >
           <AppIcon :name="copyState === 'copied' ? 'check' : 'copy'" :size="14" />
@@ -163,7 +166,7 @@ function onReasoningToggle(event: Event): void {
     :data-message-id="message.id"
   >
     <div class="assistant-main">
-      <div v-if="isUnknownRole" class="unknown-role">其他消息</div>
+      <div v-if="isUnknownRole" class="unknown-role">{{ t('message.other') }}</div>
 
       <details
         v-if="message.reasoning?.trim()"
@@ -173,7 +176,7 @@ function onReasoningToggle(event: Event): void {
       >
         <summary>
           <img class="reasoning-avatar" :src="avatarUrl" alt="" />
-          <span class="reasoning-label">已深度思考</span>
+          <span class="reasoning-label">{{ t('message.reasoning') }}</span>
           <AppIcon name="chevron-down" :size="14" class="reasoning-chevron" />
         </summary>
         <div class="reasoning-content">
@@ -207,7 +210,7 @@ function onReasoningToggle(event: Event): void {
 
       <details v-if="visibleReferences.length" class="references">
         <summary>
-          参考来源
+          {{ t('message.references') }}
           <span>{{ visibleReferences.length }}</span>
         </summary>
         <ol>
@@ -223,15 +226,17 @@ function onReasoningToggle(event: Event): void {
         </ol>
       </details>
 
-      <p v-if="!hasBody" class="empty-content assistant-empty">该消息没有可展示的内容</p>
+      <p v-if="!hasBody" class="empty-content assistant-empty">
+        {{ t('message.emptyBody') }}
+      </p>
 
       <div class="message-actions assistant-actions">
         <button
           type="button"
           class="message-action"
           :class="{ 'is-copied': copyState === 'copied' }"
-          :aria-label="copyState === 'copied' ? '已复制消息' : '复制消息'"
-          :title="copyState === 'copied' ? '已复制' : '复制消息'"
+          :aria-label="copyState === 'copied' ? t('message.copied') : t('message.copy')"
+          :title="copyState === 'copied' ? t('message.copiedTitle') : t('message.copyTitle')"
           @click="copyMessage"
         >
           <AppIcon :name="copyState === 'copied' ? 'check' : 'copy'" :size="14" />

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { Conversation } from '../types/chat'
+import { locale, t } from '../lib/i18n'
 import { formatDay, formatNumber } from '../lib/report'
 import { computeChatTimeline, type TimelineBucket } from '../lib/stats'
 
@@ -27,21 +28,29 @@ const BOTTOM = 30
 const PLOT_HEIGHT = HEIGHT - TOP - BOTTOM
 const MIN_GROUP_WIDTH = 8
 
-const compactFormat = new Intl.NumberFormat('zh-CN', {
-  notation: 'compact',
-  maximumFractionDigits: 1,
-})
+const compactFormat = computed(
+  () =>
+    new Intl.NumberFormat(locale.value, {
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }),
+)
 
 const timeline = computed(() =>
   computeChatTimeline(props.conversations, rangeDays.value || undefined),
 )
 
 const granularityLabel = computed(
-  () => ({ day: '按天', week: '按周', month: '按月' })[timeline.value.granularity],
+  () =>
+    ({
+      day: t('trend.granularityDay'),
+      week: t('trend.granularityWeek'),
+      month: t('trend.granularityMonth'),
+    })[timeline.value.granularity],
 )
 
 function formatAxis(value: number): string {
-  return value >= 10_000 ? compactFormat.format(value) : formatNumber(value)
+  return value >= 10_000 ? compactFormat.value.format(value) : formatNumber(value)
 }
 
 function niceStep(value: number): number {
@@ -53,8 +62,10 @@ function niceStep(value: number): number {
 
 function bucketRange(bucket: TimelineBucket): string {
   if (timeline.value.granularity === 'month') {
-    const date = new Date(bucket.start)
-    return `${date.getFullYear()}年${date.getMonth() + 1}月`
+    return new Intl.DateTimeFormat(locale.value, {
+      year: 'numeric',
+      month: 'long',
+    }).format(new Date(bucket.start))
   }
   if (timeline.value.granularity === 'week') {
     return `${formatDay(bucket.start)} – ${formatDay(bucket.end)}`
@@ -65,12 +76,18 @@ function bucketRange(bucket: TimelineBucket): string {
 function bucketTooltip(bucket: TimelineBucket): string {
   if (metric.value === 'messages') {
     const total = bucket.userMessages + bucket.assistantMessages
-    return `${bucketRange(bucket)} · ${formatNumber(total)} 条消息`
+    return t('trend.tooltipMessages', { range: bucketRange(bucket), count: total })
   }
   return [
     bucketRange(bucket),
-    `我 ${formatNumber(bucket.userMessages)} 条 / ${formatNumber(bucket.userCharacters)} 字`,
-    `DeepSeek ${formatNumber(bucket.assistantMessages)} 条 / ${formatNumber(bucket.assistantCharacters)} 字`,
+    t('trend.tooltipUser', {
+      count: bucket.userMessages,
+      characters: bucket.userCharacters,
+    }),
+    t('trend.tooltipAssistant', {
+      count: bucket.assistantMessages,
+      characters: bucket.assistantCharacters,
+    }),
   ].join(' · ')
 }
 
@@ -187,28 +204,28 @@ onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>
-  <section ref="container" class="trend" aria-label="时间趋势">
+  <section ref="container" class="trend" :aria-label="t('trend.aria')">
     <div class="trend-head">
       <div class="trend-title">
-        <h3>时间趋势</h3>
-        <span>{{ granularityLabel }}统计</span>
+        <h3>{{ t('trend.heading') }}</h3>
+        <span>{{ granularityLabel }}</span>
       </div>
       <div class="trend-controls">
-        <select v-model.number="rangeDays" class="range-select" aria-label="时间范围">
-          <option :value="0">全部时间</option>
-          <option :value="7">最近活跃 7 天</option>
-          <option :value="30">最近活跃 30 天</option>
-          <option :value="90">最近活跃 90 天</option>
-          <option :value="365">最近活跃 1 年</option>
+        <select v-model.number="rangeDays" class="range-select" :aria-label="t('trend.rangeAria')">
+          <option :value="0">{{ t('trend.allTime') }}</option>
+          <option :value="7">{{ t('trend.last7') }}</option>
+          <option :value="30">{{ t('trend.last30') }}</option>
+          <option :value="90">{{ t('trend.last90') }}</option>
+          <option :value="365">{{ t('trend.lastYear') }}</option>
         </select>
-        <div class="metric-switch" role="group" aria-label="统计指标">
+        <div class="metric-switch" role="group" :aria-label="t('trend.metricAria')">
           <button
             type="button"
             :class="{ 'is-active': metric === 'messages' }"
             :aria-pressed="metric === 'messages'"
             @click="metric = 'messages'"
           >
-            消息频次
+            {{ t('trend.messages') }}
           </button>
           <button
             type="button"
@@ -216,36 +233,36 @@ onBeforeUnmount(() => observer?.disconnect())
             :aria-pressed="metric === 'characters'"
             @click="metric = 'characters'"
           >
-            对话字数
+            {{ t('trend.characters') }}
           </button>
         </div>
       </div>
     </div>
 
     <div class="trend-meta">
-      <div v-if="metric === 'characters'" class="legend" role="group" aria-label="系列显示">
+      <div v-if="metric === 'characters'" class="legend" role="group" :aria-label="t('trend.seriesAria')">
         <button
           type="button"
           class="legend-button"
           :class="{ 'is-hidden': !showUser }"
           :aria-pressed="showUser"
-          title="点击显示或隐藏我的对话"
+          :title="t('trend.toggleUser')"
           @click="toggleSeries('user')"
         >
-          <i class="legend-dot is-user" />我
+          <i class="legend-dot is-user" />{{ t('insights.me') }}
         </button>
         <button
           type="button"
           class="legend-button"
           :class="{ 'is-hidden': !showAssistant }"
           :aria-pressed="showAssistant"
-          title="点击显示或隐藏 DeepSeek 的回复"
+          :title="t('trend.toggleAssistant')"
           @click="toggleSeries('assistant')"
         >
           <i class="legend-dot is-assistant" />DeepSeek
         </button>
       </div>
-      <span class="trend-note">按消息时间统计</span>
+      <span class="trend-note">{{ t('trend.note') }}</span>
     </div>
 
     <div v-if="chart.rows.length > 0" class="chart-area">
@@ -271,8 +288,8 @@ onBeforeUnmount(() => observer?.disconnect())
           role="img"
           :aria-label="
             metric === 'messages'
-              ? `${granularityLabel}消息频次趋势`
-              : `${granularityLabel}我和 DeepSeek 对话字数趋势`
+              ? t('trend.chartMessages', { granularity: granularityLabel })
+              : t('trend.chartCharacters', { granularity: granularityLabel })
           "
         >
           <g class="grid">
@@ -352,7 +369,7 @@ onBeforeUnmount(() => observer?.disconnect())
       </div>
     </div>
 
-    <p v-else class="trend-empty">当前数据没有带有效时间的消息，无法绘制趋势。</p>
+    <p v-else class="trend-empty">{{ t('trend.empty') }}</p>
   </section>
 </template>
 

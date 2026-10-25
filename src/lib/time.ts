@@ -1,4 +1,5 @@
 import type { Conversation, StoredConversation } from '../types/chat'
+import { locale, t, type Locale } from './i18n'
 
 const DATE_ONLY_NUMBER = /^\d+$/
 
@@ -65,31 +66,46 @@ export function effectiveConversationTime(conversation: Conversation): number {
     : 0
 }
 
-const timeFormat = new Intl.DateTimeFormat('zh-CN', {
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-})
+interface DateFormats {
+  time: Intl.DateTimeFormat
+  monthDay: Intl.DateTimeFormat
+  yearMonthDay: Intl.DateTimeFormat
+  full: Intl.DateTimeFormat
+}
 
-const monthDayFormat = new Intl.DateTimeFormat('zh-CN', {
-  month: 'numeric',
-  day: 'numeric',
-})
+let formatsLocale: Locale | null = null
+let formats: DateFormats
 
-const yearMonthDayFormat = new Intl.DateTimeFormat('zh-CN', {
-  year: 'numeric',
-  month: 'numeric',
-  day: 'numeric',
-})
-
-const fullDateFormat = new Intl.DateTimeFormat('zh-CN', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-})
+function getDateFormats(): DateFormats {
+  if (formatsLocale === locale.value) return formats
+  const value = locale.value
+  formatsLocale = value
+  formats = {
+    time: new Intl.DateTimeFormat(value, {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }),
+    monthDay: new Intl.DateTimeFormat(value, {
+      month: 'numeric',
+      day: 'numeric',
+    }),
+    yearMonthDay: new Intl.DateTimeFormat(value, {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+    }),
+    full: new Intl.DateTimeFormat(value, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }),
+  }
+  return formats
+}
 
 function startOfDay(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
@@ -102,19 +118,20 @@ function dayDifference(timestamp: number): number {
 function compactTimestamp(timestamp: number): string {
   const date = new Date(timestamp)
   const days = dayDifference(timestamp)
+  const dateFormats = getDateFormats()
 
-  if (days === 0) return timeFormat.format(date)
-  if (days === 1) return '昨天'
+  if (days === 0) return dateFormats.time.format(date)
+  if (days === 1) return t('sidebar.group.yesterday')
   if (date.getFullYear() === new Date().getFullYear()) {
-    return monthDayFormat.format(date)
+    return dateFormats.monthDay.format(date)
   }
-  return yearMonthDayFormat.format(date)
+  return dateFormats.yearMonthDay.format(date)
 }
 
 export function formatDateTime(value: string | undefined): string {
   const timestamp = toTime(value)
   if (timestamp === null) return '—'
-  return fullDateFormat.format(new Date(timestamp)).replace(/\//g, '-')
+  return getDateFormats().full.format(new Date(timestamp)).replace(/\//g, '-')
 }
 
 export function compactConversationDate(conversation: Conversation): string {
@@ -125,17 +142,19 @@ export function compactConversationDate(conversation: Conversation): string {
   return timestamp === null ? '' : compactTimestamp(timestamp)
 }
 
-export function relativeGroup(conversation: Conversation): string {
+export type ConversationGroup = 'today' | 'yesterday' | 'week' | 'older'
+
+export function relativeGroup(conversation: Conversation): ConversationGroup {
   const base = conversation.updatedAt
     ? toTime(conversation.updatedAt)
     : lastMessageTime(conversation) ?? toTime(conversation.createdAt)
-  if (base === null) return '更早'
+  if (base === null) return 'older'
 
   const days = dayDifference(base)
-  if (days <= 0) return '今天'
-  if (days === 1) return '昨天'
-  if (days <= 7) return '7 天内'
-  return '更早'
+  if (days <= 0) return 'today'
+  if (days === 1) return 'yesterday'
+  if (days <= 7) return 'week'
+  return 'older'
 }
 
 export function formatFileSize(bytes: number): string {

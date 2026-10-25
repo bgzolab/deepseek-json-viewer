@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { StoredConversation } from '../types/chat'
+import { t } from './i18n'
 
 interface ViewerDatabase extends DBSchema {
   conversations: {
@@ -16,7 +17,7 @@ let databasePromise: Promise<IDBPDatabase<ViewerDatabase>> | null = null
 
 function getDatabase(): Promise<IDBPDatabase<ViewerDatabase>> {
   if (typeof indexedDB === 'undefined') {
-    return Promise.reject(new Error('当前浏览器不支持 IndexedDB'))
+    return Promise.reject(new Error(t('adapter.databaseUnsupported')))
   }
   if (!databasePromise) {
     databasePromise = openDB<ViewerDatabase>(DB_NAME, DB_VERSION, {

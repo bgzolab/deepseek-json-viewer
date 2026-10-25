@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { StoredConversation } from '../types/chat'
+import { t } from '../lib/i18n'
 import AppIcon from './AppIcon.vue'
 import MessageItem from './MessageItem.vue'
 
@@ -144,8 +145,8 @@ defineExpose({ scrollToBottom, focusMatch })
     <div ref="scrollEl" class="message-list" @scroll.passive="onScroll">
       <div class="message-stream">
         <div v-if="isEmpty" class="messages-empty">
-          <strong>这个会话没有可展示的消息</strong>
-          <p>可能是导出时消息为空，或该会话只包含暂不支持的内容。</p>
+          <strong>{{ t('messages.emptyTitle') }}</strong>
+          <p>{{ t('messages.emptyBody') }}</p>
         </div>
 
         <template v-else>
@@ -155,7 +156,7 @@ defineExpose({ scrollToBottom, focusMatch })
             class="load-earlier"
             @click="loadEarlier"
           >
-            加载更早的 {{ Math.min(hiddenCount, LOAD_CHUNK) }} 条消息
+            {{ t('messages.loadEarlier', { count: Math.min(hiddenCount, LOAD_CHUNK) }) }}
           </button>
 
           <MessageItem
@@ -175,8 +176,8 @@ defineExpose({ scrollToBottom, focusMatch })
         v-if="!atBottom && !isEmpty"
         type="button"
         class="scroll-bottom"
-        aria-label="滚动到底部"
-        title="滚动到底部"
+        :aria-label="t('messages.scrollBottom')"
+        :title="t('messages.scrollBottom')"
         @click="scrollToBottom()"
       >
         <AppIcon name="arrow-down" :size="16" />

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { avatarUrl } from '../lib/assets'
+import { t } from '../lib/i18n'
 import AppIcon from './AppIcon.vue'
 import ModalShell from './ModalShell.vue'
 
@@ -15,46 +16,44 @@ const repoUrl = 'https://github.com/bgzolab/deepseek-json-viewer'
 </script>
 
 <template>
-  <ModalShell :open="open" width="sm" title="关于" @close="emit('close')">
+  <ModalShell :open="open" width="sm" :title="t('about.title')" @close="emit('close')">
     <template #icon>
       <AppIcon name="info" :size="19" />
     </template>
 
     <div class="about">
       <div class="about-hero">
-        <img class="about-avatar" :src="avatarUrl" alt="DeepSeek 助手头像" />
+        <img class="about-avatar" :src="avatarUrl" :alt="t('sidebar.avatarAlt')" />
         <div>
           <h3>DeepSeek JSON Viewer</h3>
-          <p>浏览器本地的 DeepSeek 对话导出查看器</p>
+          <p>{{ t('about.tagline') }}</p>
         </div>
       </div>
 
-      <p class="about-copy">
-        导入 DeepSeek 导出的 JSON 文件，即可离线浏览、搜索会话。所有解析与数据都留在浏览器中，不会上传任何聊天内容。
-      </p>
+      <p class="about-copy">{{ t('about.copy') }}</p>
 
       <div class="about-links">
         <a :href="repoUrl" target="_blank" rel="noopener noreferrer">
           <span class="about-link-icon"><AppIcon name="link" :size="16" /></span>
           <span class="about-link-copy">
             <span>GitHub</span>
-            <small>有帮到您的话，点个 🌟 鼓励一下我吧</small>
+            <small>{{ t('about.githubSub') }}</small>
           </span>
           <AppIcon name="external" :size="14" class="about-link-arrow" />
         </a>
         <a :href="`${repoUrl}/issues/new`" target="_blank" rel="noopener noreferrer">
           <span class="about-link-icon"><AppIcon name="message" :size="16" /></span>
           <span class="about-link-copy">
-            <span>问题反馈</span>
-            <small>报告问题或提出建议</small>
+            <span>{{ t('about.feedback') }}</span>
+            <small>{{ t('about.feedbackSub') }}</small>
           </span>
           <AppIcon name="external" :size="14" class="about-link-arrow" />
         </a>
         <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer">
           <span class="about-link-icon"><AppIcon name="link" :size="16" /></span>
           <span class="about-link-copy">
-            <span>友情链接</span>
-            <small>和 DeepSeek 对话</small>
+            <span>{{ t('about.link') }}</span>
+            <small>{{ t('about.linkSub') }}</small>
           </span>
           <AppIcon name="external" :size="14" class="about-link-arrow" />
         </a>
@@ -62,12 +61,14 @@ const repoUrl = 'https://github.com/bgzolab/deepseek-json-viewer'
 
       <div class="about-note">
         <AppIcon name="shield" :size="15" />
-        <span>数据仅存在浏览器的 IndexedDB 中，清除缓存会同时删除会话</span>
+        <span>{{ t('about.note') }}</span>
       </div>
     </div>
 
     <template #footer>
-      <button type="button" class="btn btn-ghost" @click="emit('close')">关闭</button>
+      <button type="button" class="btn btn-ghost" @click="emit('close')">
+        {{ t('common.close') }}
+      </button>
     </template>
   </ModalShell>
 </template>

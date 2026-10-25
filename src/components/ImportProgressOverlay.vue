@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ImportProgress } from '../types/import'
+import { t } from '../lib/i18n'
 import ModalShell from './ModalShell.vue'
 
 const props = defineProps<{
@@ -14,16 +15,16 @@ const percentage = computed(() => {
 })
 
 const phaseLabel = computed(() => {
-  if (props.progress.phase === 'parsing') return '正在解析文件'
-  if (props.progress.phase === 'saving') return '正在写入本地缓存'
-  return '正在准备'
+  if (props.progress.phase === 'parsing') return t('import.phaseParsing')
+  if (props.progress.phase === 'saving') return t('import.phaseSaving')
+  return t('import.phasePreparing')
 })
 </script>
 
 <template>
   <ModalShell
     :open="open"
-    title="正在导入聊天记录"
+    :title="t('import.title')"
     width="sm"
     :dismissible="false"
   >
@@ -53,7 +54,7 @@ const phaseLabel = computed(() => {
     </div>
 
     <p v-if="progress.fileName" class="progress-file">{{ progress.fileName }}</p>
-    <p class="progress-note">文件仅在当前浏览器内解析，不会上传。</p>
+    <p class="progress-note">{{ t('import.note') }}</p>
   </ModalShell>
 </template>
 

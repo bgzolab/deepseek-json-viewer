@@ -5,10 +5,24 @@ import type {
   ChatRole,
   Conversation,
 } from '../types/chat'
+import { UNTITLED_CONVERSATION } from './conversationTitle'
 import { fingerprintConversation, fingerprintMessage, normalizeText } from './hash'
+import {
+  DEFAULT_LOCALE,
+  translate,
+  type Locale,
+  type MessageKey,
+  type MessageParams,
+} from './i18n'
 import { parseTimestamp, toTime } from './time'
 
 type JsonRecord = Record<string, unknown>
+
+let activeLocale: Locale = DEFAULT_LOCALE
+
+function tr(key: MessageKey, params?: MessageParams): string {
+  return translate(activeLocale, key, params)
+}
 
 export interface ParseResult {
   conversations: Conversation[]
@@ -174,11 +188,11 @@ function looksLikeConversation(value: unknown): boolean {
 
 function extractConversationItems(root: unknown): { items: unknown[]; shape: string } {
   if (Array.isArray(root)) {
-    return { items: root, shape: '顶层数组' }
+    return { items: root, shape: tr('adapter.shapeArray') }
   }
 
   if (!isRecord(root)) {
-    throw new ExportFormatError('文件内容不是 JSON 对象或数组', 'invalid-root')
+    throw new ExportFormatError(tr('adapter.invalidRoot'), 'invalid-root')
   }
 
   for (const key of WRAPPER_KEYS) {
@@ -196,23 +210,20 @@ function extractConversationItems(root: unknown): { items: unknown[]; shape: str
       }
     }
     if (looksLikeConversation(root.data)) {
-      return { items: [root.data], shape: '单个会话对象（data）' }
+      return { items: [root.data], shape: tr('adapter.shapeSingleData') }
     }
   }
 
   if (looksLikeConversation(root)) {
-    return { items: [root], shape: '单个会话对象' }
+    return { items: [root], shape: tr('adapter.shapeSingle') }
   }
 
   const mapValues = Object.values(root).filter((value) => isRecord(value))
   if (mapValues.length > 0 && mapValues.every(looksLikeConversation)) {
-    return { items: mapValues, shape: '会话对象映射' }
+    return { items: mapValues, shape: tr('adapter.shapeMap') }
   }
 
-  throw new ExportFormatError(
-    '无法识别 JSON 结构：未找到会话数组或 conversation 字段',
-    'unrecognized-shape',
-  )
+  throw new ExportFormatError(tr('adapter.unrecognizedShape'), 'unrecognized-shape')
 }
 
 function arrayLike(value: unknown): unknown[] | null {
@@ -275,7 +286,7 @@ function flattenMapping(
   )
 
   if (roots.length === 0) {
-    warnings.push('会话的 mapping 结构缺少根节点，已按文件顺序读取消息')
+    warnings.push(tr('adapter.mappingNoRoot'))
     return [...nodes.values()]
       .sort((left, right) => left.timestamp - right.timestamp)
       .map((node) => ({ nodeId: node.key, message: node.message }))
@@ -301,7 +312,7 @@ function flattenMapping(
         .filter((node) => node.message !== null && node.message !== undefined)
         .map((node) => ({ nodeId: node.key, message: node.message }))
     }
-    warnings.push('会话的 current_node 无法回溯到根节点，已自动选择最新分支')
+    warnings.push(tr('adapter.mappingCurrentNode'))
   }
 
   const leaves = [...nodes.values()].filter(
@@ -343,7 +354,7 @@ function flattenMapping(
   }
 
   if (selectedPath.length === 0) {
-    warnings.push('mapping 中没有找到可用的消息路径')
+    warnings.push(tr('adapter.mappingNoPath'))
     return []
   }
 
@@ -524,7 +535,7 @@ function normalizeMessage(
 
   if (message.id.length > 200) {
     message.id = `${FINGERPRINT_PREFIX}${fingerprint.slice(0, 20)}`
-    warning('检测到长度异常的原始消息 ID，已改用内容指纹')
+    warning(tr('adapter.longMessageId'))
   }
 
   return message
@@ -551,7 +562,7 @@ function dedupeMessages(
   }
 
   if (removed > 0) {
-    warning(`已移除 ${removed} 条会话内重复消息`)
+    warning(tr('adapter.dedupedMessages', { count: removed }))
   }
   return result
 }
@@ -566,7 +577,7 @@ function fallbackTitle(messages: ChatMessage[]): string {
     .replace(/\s+/g, ' ')
     .trim()
 
-  if (!plain) return '未命名会话'
+  if (!plain) return UNTITLED_CONVERSATION
   return plain.length > 48 ? `${plain.slice(0, 48)}…` : plain
 }
 
@@ -594,7 +605,7 @@ function normalizeConversation(
   warning: (message: string) => void,
 ): Conversation {
   if (!isRecord(raw)) {
-    throw new ExportFormatError('会话条目不是对象', 'invalid-conversation')
+    throw new ExportFormatError(tr('adapter.invalidConversation'), 'invalid-conversation')
   }
 
   const directMessages = extractDirectMessages(raw)
@@ -618,7 +629,7 @@ function normalizeConversation(
       const message = normalizeMessage(item.message, item.nodeId, warning)
       if (message) normalizedMessages.push(message)
     } catch {
-      warning(`第 ${item.index + 1} 条消息无法解析，已跳过`)
+      warning(tr('adapter.messageSkipped', { index: item.index + 1 }))
     }
   }
 
@@ -652,7 +663,12 @@ function normalizeConversation(
   return conversation
 }
 
-export function parseExport(root: unknown, sourceFile = '未命名文件'): ParseResult {
+export function parseExport(
+  root: unknown,
+  sourceFile = '未命名文件',
+  language: Locale = DEFAULT_LOCALE,
+): ParseResult {
+  activeLocale = language
   const { items, shape } = extractConversationItems(root)
   const warnings: string[] = []
   const warningMessages: string[] = []
@@ -668,36 +684,46 @@ export function parseExport(root: unknown, sourceFile = '未命名文件'): Pars
     try {
       conversations.push(normalizeConversation(item, sourceFile, warning))
     } catch (error) {
-      const reason = error instanceof Error ? error.message : '未知错误'
-      warning(`第 ${index + 1} 个会话无法解析：${reason}`)
+      const reason = error instanceof Error ? error.message : tr('adapter.unknownError')
+      warning(tr('adapter.conversationFailed', { index: index + 1, reason }))
     }
   })
 
   if (conversations.length === 0) {
     if (warningMessages.length > 0) {
       throw new ExportFormatError(
-        `文件中的会话结构无法识别：${warningMessages[0]}`,
+        tr('adapter.noReadableConversations', { reason: warningMessages[0] }),
         'no-readable-conversations',
       )
     }
-    throw new ExportFormatError('文件中没有可导入的会话', 'empty-export')
+    throw new ExportFormatError(tr('adapter.emptyExport'), 'empty-export')
   }
 
   if (warningCount > warningMessages.length) {
-    warnings.push(`另有 ${warningCount - warningMessages.length} 条警告未显示`)
+    warnings.push(
+      tr('adapter.hiddenWarnings', {
+        count: warningCount - warningMessages.length,
+        hidden: warningCount - warningMessages.length,
+      }),
+    )
   }
   warnings.push(...warningMessages)
 
   return { conversations, warnings, shape }
 }
 
-export function parseExportText(text: string, sourceFile = '未命名文件'): ParseResult {
+export function parseExportText(
+  text: string,
+  sourceFile = '未命名文件',
+  language: Locale = DEFAULT_LOCALE,
+): ParseResult {
   let root: unknown
   try {
     root = JSON.parse(text.replace(/^\uFEFF/, ''))
   } catch (error) {
-    const reason = error instanceof Error ? error.message : '未知错误'
-    throw new ExportFormatError(`JSON 解析失败：${reason}`, 'invalid-json')
+    activeLocale = language
+    const reason = error instanceof Error ? error.message : tr('adapter.unknownError')
+    throw new ExportFormatError(tr('adapter.invalidJson', { reason }), 'invalid-json')
   }
-  return parseExport(root, sourceFile)
+  return parseExport(root, sourceFile, language)
 }

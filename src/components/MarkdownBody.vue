@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { ChatReference } from '../types/chat'
 import { copyText } from '../lib/clipboard'
+import { t } from '../lib/i18n'
 import { highlightSearchInHtml, renderMarkdown } from '../lib/markdown'
 
 const props = withDefaults(
@@ -35,8 +36,8 @@ async function onClick(event: MouseEvent): Promise<void> {
   const block = button.closest('.md-code-block')
   const code = block?.querySelector('code')?.textContent ?? ''
   const successful = await copyText(code)
-  const original = '复制'
-  button.textContent = successful ? '已复制' : '复制失败'
+  const original = t('markdown.copy')
+  button.textContent = successful ? t('markdown.copied') : t('markdown.copyFailed')
   button.classList.toggle('is-copied', successful)
 
   window.setTimeout(() => {

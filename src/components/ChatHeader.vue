@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { StoredConversation } from '../types/chat'
+import { conversationTitle } from '../lib/conversationTitle'
+import { t } from '../lib/i18n'
 import { formatDateTime } from '../lib/time'
 import { useChatStore } from '../stores/chatStore'
 import AppIcon from './AppIcon.vue'
@@ -35,8 +37,8 @@ const desktopToggleVisible = computed(() => store.state.sidebarCollapsed)
         type="button"
         class="icon-button sidebar-toggle"
         :class="{ 'is-desktop-visible': desktopToggleVisible }"
-        aria-label="切换会话侧边栏"
-        title="切换会话侧边栏"
+        :aria-label="t('header.toggleSidebar')"
+        :title="t('header.toggleSidebar')"
         @click="emit('toggle-sidebar')"
       >
         <AppIcon name="sidebar" :size="17" class="desktop-icon" />
@@ -44,38 +46,43 @@ const desktopToggleVisible = computed(() => store.state.sidebarCollapsed)
       </button>
 
       <div v-if="conversation" class="title-block">
-        <h1 :title="conversation.title">
-          <HighlightText :text="conversation.title || '未命名会话'" :query="store.state.query.trim()" />
+        <h1 :title="conversationTitle(conversation.title, t('conversation.untitled'))">
+          <HighlightText
+            :text="conversationTitle(conversation.title, t('conversation.untitled'))"
+            :query="store.state.query.trim()"
+          />
         </h1>
         <div class="meta-row">
           <span v-if="conversation.model">{{ conversation.model }}</span>
           <span v-if="conversation.model" class="meta-separator">·</span>
-          <span>{{ conversation.messages.length }} 条消息</span>
+          <span>{{ t('header.messages', { count: conversation.messages.length }) }}</span>
           <span v-if="conversation.createdAt" class="meta-extra">
-            <span class="meta-separator">·</span>创建 {{ formatDateTime(conversation.createdAt) }}
+            <span class="meta-separator">·</span>
+            {{ t('header.created', { date: formatDateTime(conversation.createdAt) }) }}
           </span>
           <span v-if="conversation.updatedAt" class="meta-extra">
-            <span class="meta-separator">·</span>更新 {{ formatDateTime(conversation.updatedAt) }}
+            <span class="meta-separator">·</span>
+            {{ t('header.updated', { date: formatDateTime(conversation.updatedAt) }) }}
           </span>
         </div>
       </div>
 
       <div v-else class="title-block">
-        <h1>对话预览</h1>
+        <h1>{{ t('header.previewTitle') }}</h1>
         <div class="meta-row">
-          <span>本地只读模式</span>
+          <span>{{ t('header.readOnly') }}</span>
         </div>
       </div>
     </div>
 
-    <div v-if="showSearchNav" class="match-nav" aria-label="搜索匹配导航">
+    <div v-if="showSearchNav" class="match-nav" :aria-label="t('header.searchNav')">
       <template v-if="matchTotal > 0">
         <span class="match-counter">{{ activeMatchNumber }} / {{ matchTotal }}</span>
         <button
           type="button"
           class="icon-button is-small"
-          aria-label="上一处匹配"
-          title="上一处匹配"
+          :aria-label="t('header.previousMatch')"
+          :title="t('header.previousMatch')"
           @click="store.previousMatch"
         >
           <AppIcon name="chevron-up" :size="15" />
@@ -83,19 +90,19 @@ const desktopToggleVisible = computed(() => store.state.sidebarCollapsed)
         <button
           type="button"
           class="icon-button is-small"
-          aria-label="下一处匹配"
-          title="下一处匹配"
+          :aria-label="t('header.nextMatch')"
+          :title="t('header.nextMatch')"
           @click="store.nextMatch"
         >
           <AppIcon name="chevron-down" :size="15" />
         </button>
       </template>
-      <span v-else class="title-match-label">标题匹配</span>
+      <span v-else class="title-match-label">{{ t('header.titleMatch') }}</span>
       <button
         type="button"
         class="icon-button is-small close-search"
-        aria-label="退出搜索"
-        title="退出搜索"
+        :aria-label="t('header.exitSearch')"
+        :title="t('header.exitSearch')"
         @click="store.clearQuery"
       >
         <AppIcon name="x" :size="14" />

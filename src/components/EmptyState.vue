@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { brandHeroUrl } from '../lib/assets'
+import { t } from '../lib/i18n'
 import AppIcon from './AppIcon.vue'
 
 const emit = defineEmits<{
@@ -13,21 +14,21 @@ const emit = defineEmits<{
       <img
         class="welcome-avatar"
         :src="brandHeroUrl"
-        alt="DeepSeek 助手头像"
+        :alt="t('sidebar.avatarAlt')"
       />
 
-      <h1>你好，欢迎回来</h1>
-      <p class="empty-lead">导入 DeepSeek 导出的聊天记录，在本地继续阅读你的对话。</p>
+      <h1>{{ t('empty.welcome') }}</h1>
+      <p class="empty-lead">{{ t('empty.lead') }}</p>
 
       <button type="button" class="upload-box" @click="emit('import')">
         <span class="upload-icon"><AppIcon name="upload" :size="18" /></span>
         <span class="upload-copy">
-          <strong>拖拽 JSON 文件到这里</strong>
-          <span>或点击选择文件，支持一次导入多个</span>
+          <strong>{{ t('empty.dropTitle') }}</strong>
+          <span>{{ t('empty.dropHint') }}</span>
         </span>
       </button>
 
-      <p class="empty-features">多文件导入 · 自动去重 · 全文搜索</p>
+      <p class="empty-features">{{ t('empty.features') }}</p>
     </div>
   </section>
 </template>

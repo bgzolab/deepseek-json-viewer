@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { StoredConversation } from '../types/chat'
 import { avatarUrl } from '../lib/assets'
+import { locale, localeOptions, setLocale, t } from '../lib/i18n'
 import { hasActiveModal } from '../lib/modalStack'
 import { setThemePreference, themePreference, type ThemePreference } from '../lib/theme'
 import { relativeGroup } from '../lib/time'
@@ -24,28 +25,30 @@ const footerMenuOpen = ref(false)
 const footerMenu = ref<HTMLElement | null>(null)
 const footerTrigger = ref<HTMLButtonElement | null>(null)
 
-const themeOptions: Array<{ value: ThemePreference; label: string }> = [
-  { value: 'auto', label: '自动' },
-  { value: 'light', label: '浅色' },
-  { value: 'dark', label: '深色' },
-]
+const themeOptions = computed<Array<{ value: ThemePreference; label: string }>>(() => [
+  { value: 'auto', label: t('theme.auto') },
+  { value: 'light', label: t('theme.light') },
+  { value: 'dark', label: t('theme.dark') },
+])
 
-const groups = computed<Array<{ label: string; items: StoredConversation[] }>>(() => {
+const groups = computed<Array<{ key: string; label: string; items: StoredConversation[] }>>(() => {
   const conversations = store.visibleConversations.value
   if (store.normalizedQuery.value) {
-    return conversations.length > 0 ? [{ label: '搜索结果', items: conversations }] : []
+    return conversations.length > 0
+      ? [{ key: 'search', label: t('sidebar.group.search'), items: conversations }]
+      : []
   }
 
   const buckets = new Map<string, StoredConversation[]>()
   for (const conversation of conversations) {
-    const label = relativeGroup(conversation)
-    const bucket = buckets.get(label) ?? []
+    const key = relativeGroup(conversation)
+    const bucket = buckets.get(key) ?? []
     bucket.push(conversation)
-    buckets.set(label, bucket)
+    buckets.set(key, bucket)
   }
 
-  return ['今天', '昨天', '7 天内', '更早']
-    .map((label) => ({ label, items: buckets.get(label) ?? [] }))
+  return (['today', 'yesterday', 'week', 'older'] as const)
+    .map((key) => ({ key, label: t(`sidebar.group.${key}`), items: buckets.get(key) ?? [] }))
     .filter((group) => group.items.length > 0)
 })
 
@@ -142,6 +145,10 @@ function requestClearFromMenu(): void {
   emit('request-clear')
 }
 
+function onLocaleChange(event: Event): void {
+  setLocale((event.target as HTMLSelectElement).value)
+}
+
 function onThemeOptionKeydown(event: KeyboardEvent, index: number): void {
   const step =
     event.key === 'ArrowRight' || event.key === 'ArrowDown'
@@ -151,8 +158,8 @@ function onThemeOptionKeydown(event: KeyboardEvent, index: number): void {
         : 0
   if (step === 0) return
   event.preventDefault()
-  const nextIndex = (index + step + themeOptions.length) % themeOptions.length
-  setThemePreference(themeOptions[nextIndex].value)
+  const nextIndex = (index + step + themeOptions.value.length) % themeOptions.value.length
+  setThemePreference(themeOptions.value[nextIndex].value)
   const buttons =
     (event.currentTarget as HTMLElement).parentElement?.querySelectorAll<HTMLButtonElement>(
       '.theme-option',
@@ -180,21 +187,21 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <aside class="sidebar" aria-label="会话列表">
+  <aside class="sidebar" :aria-label="t('sidebar.aria')">
     <header class="sidebar-top">
       <div class="brand-row">
-        <img class="brand-avatar" :src="avatarUrl" alt="DeepSeek 助手头像" />
+        <img class="brand-avatar" :src="avatarUrl" :alt="t('sidebar.avatarAlt')" />
         <div class="brand-copy">
           <span class="brand-word">deepseek</span>
-          <span class="brand-sub">对话预览</span>
+          <span class="brand-sub">{{ t('sidebar.brandSub') }}</span>
         </div>
         <div class="top-actions">
           <button
             type="button"
             class="icon-button top-action"
             :class="{ 'is-active': searchOpen || store.state.query }"
-            aria-label="搜索"
-            title="搜索（⌘K）"
+            :aria-label="t('sidebar.search')"
+            :title="t('sidebar.searchTitle')"
             @click="focusSearch"
           >
             <AppIcon name="search" :size="16" />
@@ -202,8 +209,8 @@ onBeforeUnmount(() => {
           <button
             type="button"
             class="icon-button top-action sidebar-collapse"
-            aria-label="收起侧边栏"
-            title="收起侧边栏"
+            :aria-label="t('sidebar.collapse')"
+            :title="t('sidebar.collapse')"
             @click="store.toggleSidebar"
           >
             <AppIcon name="sidebar" :size="16" />
@@ -211,7 +218,7 @@ onBeforeUnmount(() => {
           <button
             type="button"
             class="icon-button top-action sidebar-close"
-            aria-label="关闭侧边栏"
+            :aria-label="t('sidebar.close')"
             @click="closeSidebar"
           >
             <AppIcon name="x" :size="17" />
@@ -221,7 +228,7 @@ onBeforeUnmount(() => {
 
       <button type="button" class="new-chat-button" @click="emit('import')">
         <AppIcon name="plus" :size="16" />
-        <span>导入聊天记录</span>
+        <span>{{ t('sidebar.import') }}</span>
       </button>
 
       <Transition name="search-field">
@@ -231,8 +238,8 @@ onBeforeUnmount(() => {
             ref="searchInput"
             type="search"
             class="search-input"
-            placeholder="搜索会话和消息"
-            aria-label="搜索会话和消息"
+            :placeholder="t('sidebar.searchPlaceholder')"
+            :aria-label="t('sidebar.searchPlaceholder')"
             autocomplete="off"
             spellcheck="false"
             :value="store.state.query"
@@ -242,7 +249,7 @@ onBeforeUnmount(() => {
           <button
             type="button"
             class="search-clear"
-            aria-label="关闭搜索"
+            :aria-label="t('sidebar.closeSearch')"
             @click="clearSearch(true)"
           >
             <AppIcon name="x" :size="13" />
@@ -252,15 +259,16 @@ onBeforeUnmount(() => {
 
       <p v-if="store.normalizedQuery.value" class="search-summary">
         <template v-if="resultCount > 0">
-          {{ resultCount }} 个会话 · {{ messageMatchCount }} 处消息匹配
+          {{ t('unit.conversationCount', { count: resultCount }) }} ·
+          {{ t('search.matchCount', { count: messageMatchCount }) }}
         </template>
-        <template v-else>没有找到匹配内容</template>
+        <template v-else>{{ t('search.noMatches') }}</template>
       </p>
     </header>
 
     <div class="conversation-scroll">
-      <nav v-if="groups.length > 0" class="conversation-groups" aria-label="会话">
-        <section v-for="group in groups" :key="group.label" class="conversation-group">
+      <nav v-if="groups.length > 0" class="conversation-groups" :aria-label="t('sidebar.groupsAria')">
+        <section v-for="group in groups" :key="group.key" class="conversation-group">
           <h2 class="group-label">{{ group.label }}</h2>
           <div class="conversation-list">
             <ConversationListItem
@@ -279,15 +287,19 @@ onBeforeUnmount(() => {
       </nav>
 
       <div v-else-if="store.normalizedQuery.value" class="list-empty">
-        <strong>没有找到相关会话</strong>
-        <p>换一个关键词，或清空搜索后浏览全部记录。</p>
-        <button type="button" class="text-action" @click="clearSearch()">清空搜索</button>
+        <strong>{{ t('sidebar.noResultsTitle') }}</strong>
+        <p>{{ t('sidebar.noResultsBody') }}</p>
+        <button type="button" class="text-action" @click="clearSearch()">
+          {{ t('sidebar.clearSearch') }}
+        </button>
       </div>
 
       <div v-else class="list-empty">
-        <strong>还没有会话</strong>
-        <p>导入 DeepSeek 导出的 JSON 文件后，会话会显示在这里。</p>
-        <button type="button" class="text-action" @click="emit('import')">导入文件</button>
+        <strong>{{ t('sidebar.emptyTitle') }}</strong>
+        <p>{{ t('sidebar.emptyBody') }}</p>
+        <button type="button" class="text-action" @click="emit('import')">
+          {{ t('sidebar.importFile') }}
+        </button>
       </div>
     </div>
 
@@ -299,14 +311,15 @@ onBeforeUnmount(() => {
           class="storage-row"
           :class="{ 'is-open': footerMenuOpen }"
           :aria-expanded="footerMenuOpen"
-          title="更多菜单"
+          :title="t('sidebar.moreMenu')"
           @click="toggleFooterMenu"
         >
           <span class="storage-icon"><AppIcon name="database" :size="16" /></span>
           <span class="storage-copy">
-            <span class="storage-title">本地缓存</span>
+            <span class="storage-title">{{ t('sidebar.storageTitle') }}</span>
             <span class="storage-meta">
-              {{ store.state.conversations.length }} 个会话 · {{ store.totalMessages.value }} 条消息
+              {{ t('unit.conversationCount', { count: store.state.conversations.length }) }} ·
+              {{ t('unit.messageCount', { count: store.totalMessages.value }) }}
             </span>
           </span>
           <AppIcon
@@ -322,14 +335,14 @@ onBeforeUnmount(() => {
             ref="footerMenu"
             class="footer-menu"
             role="group"
-            aria-label="更多菜单"
+            :aria-label="t('sidebar.moreMenu')"
           >
             <div class="footer-theme">
               <div class="footer-theme-label">
                 <AppIcon name="sun" :size="16" />
-                <span>主题</span>
+                <span>{{ t('theme.label') }}</span>
               </div>
-              <div class="theme-options" role="radiogroup" aria-label="主题">
+              <div class="theme-options" role="radiogroup" :aria-label="t('theme.label')">
                 <button
                   v-for="(option, index) in themeOptions"
                   :key="option.value"
@@ -346,6 +359,21 @@ onBeforeUnmount(() => {
                 </button>
               </div>
             </div>
+            <label class="footer-language">
+              <span class="footer-theme-label">
+                <AppIcon name="language" :size="16" />
+                <span>{{ t('language.label') }}</span>
+              </span>
+              <select class="locale-select" :value="locale" @change="onLocaleChange">
+                <option
+                  v-for="option in localeOptions"
+                  :key="option.code"
+                  :value="option.code"
+                >
+                  {{ option.label }}
+                </option>
+              </select>
+            </label>
             <div class="footer-menu-divider" role="separator" />
             <button
               type="button"
@@ -353,7 +381,7 @@ onBeforeUnmount(() => {
               @click="openFooterDialog('stats')"
             >
               <AppIcon name="chart" :size="16" />
-              <span>数据统计</span>
+              <span>{{ t('menu.stats') }}</span>
             </button>
             <button
               type="button"
@@ -361,7 +389,7 @@ onBeforeUnmount(() => {
               @click="openFooterDialog('about')"
             >
               <AppIcon name="info" :size="16" />
-              <span>关于</span>
+              <span>{{ t('menu.about') }}</span>
             </button>
             <div class="footer-menu-divider" role="separator" />
             <button
@@ -371,7 +399,7 @@ onBeforeUnmount(() => {
               @click="requestClearFromMenu"
             >
               <AppIcon name="trash" :size="16" />
-              <span>清空本地数据</span>
+              <span>{{ t('menu.clear') }}</span>
             </button>
           </div>
         </Transition>
@@ -733,6 +761,41 @@ onBeforeUnmount(() => {
 .footer-theme-label :deep(.app-icon) {
   flex: none;
   color: var(--text-tertiary);
+}
+
+.footer-language {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 9px 8px;
+  cursor: pointer;
+}
+
+.footer-language .footer-theme-label {
+  flex: none;
+  font-size: 13px;
+}
+
+.locale-select {
+  max-width: 124px;
+  height: 27px;
+  padding: 0 22px 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  outline: none;
+  appearance: none;
+  background-color: var(--bg-elevated);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2381858c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+}
+
+.locale-select:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
 }
 
 .theme-options {

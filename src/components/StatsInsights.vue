@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { conversationTitle } from '../lib/conversationTitle'
+import { locale, t } from '../lib/i18n'
 import type { ChatStats } from '../lib/stats'
 import {
   formatDay,
@@ -24,33 +26,45 @@ const emit = defineEmits<{
 }>()
 
 const rankMetric = ref<RankMetric>('messages')
-const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+const weekdays = computed(() =>
+  Array.from({ length: 7 }, (_, index) =>
+    new Intl.DateTimeFormat(locale.value, { weekday: 'short' }).format(
+      new Date(2026, 0, 5 + index),
+    ),
+  ),
+)
 const hourLabels = new Set([0, 6, 12, 18, 23])
 
-const rankTabs: Array<{ value: RankMetric; label: string }> = [
-  { value: 'messages', label: '消息' },
-  { value: 'characters', label: '字数' },
-  { value: 'duration', label: '时长' },
-]
+const rankTabs = computed<Array<{ value: RankMetric; label: string }>>(() => [
+  { value: 'messages', label: t('insights.metricMessages') },
+  { value: 'characters', label: t('insights.metricCharacters') },
+  { value: 'duration', label: t('insights.metricDuration') },
+])
 
 const activityCards = computed(() => {
   const activity = props.report.activity
   return [
-    { label: '活跃天数', value: `${formatNumber(activity.activeDays)} 天`, foot: '有消息的日期' },
     {
-      label: '最长连续',
-      value: `${formatNumber(activity.longestStreak)} 天`,
-      foot: '连续使用纪录',
+      label: t('insights.activeDays'),
+      value: t('unit.days', { count: activity.activeDays }),
+      foot: t('insights.activeDaysFoot'),
     },
     {
-      label: '最近连续',
-      value: `${formatNumber(activity.recentStreak)} 天`,
-      foot: '截至最后一条消息',
+      label: t('insights.longestStreak'),
+      value: t('unit.days', { count: activity.longestStreak }),
+      foot: t('insights.longestStreakFoot'),
     },
     {
-      label: '最活跃一天',
+      label: t('insights.recentStreak'),
+      value: t('unit.days', { count: activity.recentStreak }),
+      foot: t('insights.recentStreakFoot'),
+    },
+    {
+      label: t('insights.peakDay'),
       value: formatDay(activity.peakDay?.start ?? null),
-      foot: activity.peakDay ? `${formatNumber(activity.peakDay.count)} 条消息` : '暂无数据',
+      foot: activity.peakDay
+        ? t('insights.peakDayFoot', { count: activity.peakDay.count })
+        : t('insights.noData'),
     },
   ]
 })
@@ -68,8 +82,8 @@ function heatStyle(count: number): Record<string, string> {
 }
 
 function rankValue(row: ConversationRank): string {
-  if (rankMetric.value === 'messages') return `${formatNumber(row.messages)} 条`
-  if (rankMetric.value === 'characters') return `${formatNumber(row.characters)} 字`
+  if (rankMetric.value === 'messages') return t('unit.messages', { count: row.messages })
+  if (rankMetric.value === 'characters') return t('unit.characters', { count: row.characters })
   return formatDuration(row.durationMs)
 }
 
@@ -115,24 +129,27 @@ const contentCards = computed(() => {
   const content = props.report.content
   return [
     {
-      label: '带推理回复',
+      label: t('insights.reasoningReplies'),
       value: formatPercent(content.reasoningMessages, content.assistantMessages),
-      foot: `${formatNumber(content.reasoningMessages)} / ${formatNumber(content.assistantMessages)} 条`,
+      foot: t('insights.reasoningFoot', {
+        with: content.reasoningMessages,
+        count: content.assistantMessages,
+      }),
     },
     {
-      label: '推理字数',
+      label: t('insights.reasoningCharacters'),
       value: formatNumber(content.reasoningCharacters),
-      foot: '已包含在总字数中',
+      foot: t('insights.reasoningIncluded'),
     },
     {
-      label: '引用来源',
+      label: t('insights.references'),
       value: formatNumber(content.references),
-      foot: `${formatNumber(content.referenceMessages)} 条消息`,
+      foot: t('insights.referenceFoot', { count: content.referenceMessages }),
     },
     {
-      label: '附件',
+      label: t('insights.attachments'),
       value: formatNumber(content.attachments),
-      foot: `${formatNumber(content.attachmentMessages)} 条消息`,
+      foot: t('insights.attachmentFoot', { count: content.attachmentMessages }),
     },
   ]
 })
@@ -140,10 +157,10 @@ const contentCards = computed(() => {
 
 <template>
   <div class="insights">
-    <section class="insight-section" aria-label="活跃度">
+    <section class="insight-section" :aria-label="t('insights.activityAria')">
       <div class="section-heading">
-        <h3>活跃度</h3>
-        <span>按消息日期统计</span>
+        <h3>{{ t('insights.activity') }}</h3>
+        <span>{{ t('insights.activitySub') }}</span>
       </div>
 
       <div class="metric-grid">
@@ -156,15 +173,15 @@ const contentCards = computed(() => {
 
       <div class="heatmap-card">
         <div class="heatmap-head">
-          <h4>使用习惯</h4>
+          <h4>{{ t('insights.habits') }}</h4>
           <div class="heatmap-legend">
-            <span>少</span>
+            <span>{{ t('insights.less') }}</span>
             <i class="heat-level is-1" />
             <i class="heat-level is-2" />
             <i class="heat-level is-3" />
             <i class="heat-level is-4" />
-            <span>多</span>
-            <span class="heatmap-note">按本地时间</span>
+            <span>{{ t('insights.more') }}</span>
+            <span class="heatmap-note">{{ t('insights.localTime') }}</span>
           </div>
         </div>
 
@@ -175,7 +192,7 @@ const contentCards = computed(() => {
           </span>
         </div>
 
-        <div class="heatmap" role="img" aria-label="周一到周日、按小时的消息分布热力图">
+        <div class="heatmap" role="img" :aria-label="t('insights.heatmapAria')">
           <template v-for="(label, row) in weekdays" :key="label">
             <span class="heatmap-day">{{ label }}</span>
             <span
@@ -184,17 +201,17 @@ const contentCards = computed(() => {
               class="heatmap-cell"
               :class="{ 'is-empty': count === 0 }"
               :style="heatStyle(count)"
-              :title="`${label} ${hour}:00 · ${formatNumber(count)} 条消息`"
+              :title="t('insights.heatmapCell', { day: label, hour, count })"
             />
           </template>
         </div>
       </div>
     </section>
 
-    <section class="insight-section" aria-label="会话排行">
+    <section class="insight-section" :aria-label="t('insights.ranking')">
       <div class="section-heading">
-        <h3>会话排行 Top 10</h3>
-        <div class="rank-switch" role="group" aria-label="排行指标">
+        <h3>{{ t('insights.ranking') }}</h3>
+        <div class="rank-switch" role="group" :aria-label="t('insights.rankMetricAria')">
           <button
             v-for="tab in rankTabs"
             :key="tab.value"
@@ -218,22 +235,25 @@ const contentCards = computed(() => {
         >
           <span class="rank-index">{{ index + 1 }}</span>
           <span class="rank-copy">
-            <span class="rank-title">{{ row.title || '未命名会话' }}</span>
+            <span class="rank-title">
+              {{ conversationTitle(row.title, t('conversation.untitled')) }}
+            </span>
             <span class="rank-meta">
-              {{ formatNumber(row.messages) }} 条消息 · {{ formatNumber(row.characters) }} 字
+              {{ t('unit.messageCount', { count: row.messages }) }} ·
+              {{ t('unit.characters', { count: row.characters }) }}
             </span>
           </span>
           <span class="rank-value">{{ rankValue(row) }}</span>
         </button>
       </div>
-      <p v-else class="insight-empty">还没有可排行的会话。</p>
+      <p v-else class="insight-empty">{{ t('insights.noRanked') }}</p>
     </section>
 
     <div class="insight-grid">
-      <section class="insight-card" aria-label="会话长度分布">
+      <section class="insight-card" :aria-label="t('insights.lengthDistribution')">
         <div class="card-heading">
-          <h4>会话长度分布</h4>
-          <span>按消息数</span>
+          <h4>{{ t('insights.lengthDistribution') }}</h4>
+          <span>{{ t('insights.byMessages') }}</span>
         </div>
         <div class="dist-list">
           <div v-for="bucket in report.lengthDistribution" :key="bucket.label" class="dist-row">
@@ -252,48 +272,52 @@ const contentCards = computed(() => {
         </div>
       </section>
 
-      <section class="insight-card" aria-label="问答长度对比">
+      <section class="insight-card" :aria-label="t('insights.qaHeading')">
         <div class="card-heading">
-          <h4>问答长度</h4>
-          <span>正文，不含推理</span>
+          <h4>{{ t('insights.qaHeading') }}</h4>
+          <span>{{ t('insights.qaSub') }}</span>
         </div>
         <div class="qa-list">
           <div class="qa-row">
-            <span class="qa-label">我</span>
+            <span class="qa-label">{{ t('insights.me') }}</span>
             <span class="qa-track">
               <span class="qa-fill is-user" :style="{ width: `${qa.userWidth}%` }" />
             </span>
-            <span class="qa-value">{{ formatNumber(Math.round(qa.averageUser)) }} 字</span>
+            <span class="qa-value">
+              {{ t('unit.characters', { count: Math.round(qa.averageUser) }) }}
+            </span>
           </div>
           <div class="qa-row">
             <span class="qa-label">DeepSeek</span>
             <span class="qa-track">
               <span class="qa-fill is-assistant" :style="{ width: `${qa.assistantWidth}%` }" />
             </span>
-            <span class="qa-value">{{ formatNumber(Math.round(qa.averageAssistant)) }} 字</span>
+            <span class="qa-value">
+              {{ t('unit.characters', { count: Math.round(qa.averageAssistant) }) }}
+            </span>
           </div>
         </div>
         <p class="card-note">
           {{
             qa.ratio > 0
-              ? `平均回复约为提问的 ${formatDecimal(qa.ratio)} 倍`
-              : '还没有足够的问答数据'
+              ? t('insights.qaRatio', { ratio: formatDecimal(qa.ratio) })
+              : t('insights.qaNotEnough')
           }}
         </p>
       </section>
 
-      <section class="insight-card" aria-label="模型分布">
+      <section class="insight-card" :aria-label="t('insights.modelsHeading')">
         <div class="card-heading">
-          <h4>模型分布</h4>
-          <span>{{ report.modelCount }} 个模型</span>
+          <h4>{{ t('insights.modelsHeading') }}</h4>
+          <span>{{ t('insights.modelCount', { count: report.modelCount }) }}</span>
         </div>
         <div class="model-list">
           <div v-for="model in report.models" :key="model.model" class="model-row">
             <div class="model-copy">
               <span class="model-name" :title="model.model">{{ model.model }}</span>
               <span class="model-meta">
-                {{ formatNumber(model.conversations) }} 个会话 ·
-                {{ formatNumber(model.messages) }} 条消息
+                {{ t('unit.conversationCount', { count: model.conversations }) }} ·
+                {{ t('unit.messageCount', { count: model.messages }) }}
               </span>
             </div>
             <span class="model-share">
@@ -309,10 +333,10 @@ const contentCards = computed(() => {
         </div>
       </section>
 
-      <section class="insight-card" aria-label="内容构成">
+      <section class="insight-card" :aria-label="t('insights.contentHeading')">
         <div class="card-heading">
-          <h4>内容构成</h4>
-          <span>推理、引用与附件</span>
+          <h4>{{ t('insights.contentHeading') }}</h4>
+          <span>{{ t('insights.contentSub') }}</span>
         </div>
         <div class="content-grid">
           <div v-for="card in contentCards" :key="card.label" class="content-cell">
@@ -326,7 +350,7 @@ const contentCards = computed(() => {
 
     <p v-if="report.conversations.length === 0" class="insight-empty">
       <AppIcon name="chart" :size="16" />
-      还没有可分析的数据。
+      {{ t('insights.noAnalyzable') }}
     </p>
   </div>
 </template>
