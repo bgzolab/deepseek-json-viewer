@@ -304,6 +304,7 @@ export function formatNumber(value: number): string {
 
 export function formatDecimal(value: number): string {
   ensureFormats()
+  // Keep large averages compact; a single decimal only matters below 100.
   return value >= 100
     ? formatNumberFor(locale.value, Math.round(value))
     : decimalFormat.format(value)

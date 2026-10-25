@@ -175,6 +175,7 @@ function escapeRegExp(value: string): string {
 }
 
 const SKIPPED_HIGHLIGHT_TAGS = new Set(['SCRIPT', 'STYLE', 'BUTTON', 'TEXTAREA'])
+const SKIPPED_HIGHLIGHT_SELECTOR = '.md-image-placeholder, .md-code-lang'
 
 export function highlightSearchInHtml(
   html: string,
@@ -191,7 +192,11 @@ export function highlightSearchInHtml(
   let node = walker.nextNode()
   while (node) {
     const parent = node.parentElement
-    if (parent && !SKIPPED_HIGHLIGHT_TAGS.has(parent.tagName)) {
+    if (
+      parent &&
+      !SKIPPED_HIGHLIGHT_TAGS.has(parent.tagName) &&
+      !parent.closest(SKIPPED_HIGHLIGHT_SELECTOR)
+    ) {
       textNodes.push(node as Text)
     }
     node = walker.nextNode()
