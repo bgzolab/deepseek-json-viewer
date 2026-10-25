@@ -189,6 +189,11 @@ function requestClear(): void {
   confirmState.open = true
 }
 
+function openConversationFromStats(id: string): void {
+  statsOpen.value = false
+  store.selectConversation(id)
+}
+
 function closeConfirm(): void {
   if (confirmState.busy) return
   confirmState.open = false
@@ -329,7 +334,11 @@ onBeforeUnmount(() => {
       @close="reportOpen = false"
     />
 
-    <StatsDialog :open="statsOpen" @close="statsOpen = false" />
+    <StatsDialog
+      :open="statsOpen"
+      @close="statsOpen = false"
+      @select="openConversationFromStats"
+    />
     <AboutDialog :open="aboutOpen" @close="aboutOpen = false" />
 
     <ConfirmDialog

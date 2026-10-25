@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { computeChatStats } from '../lib/stats'
+import { buildCsvReport, buildMarkdownReport, computeChatReport } from '../lib/report'
 import { useChatStore } from '../stores/chatStore'
 import AppIcon from './AppIcon.vue'
 import ModalShell from './ModalShell.vue'
+import StatsInsights from './StatsInsights.vue'
 import StatsTrendChart from './StatsTrendChart.vue'
 
 defineProps<{
@@ -12,10 +14,12 @@ defineProps<{
 
 const emit = defineEmits<{
   close: []
+  select: [id: string]
 }>()
 
 const store = useChatStore()
 const stats = computed(() => computeChatStats(store.state.conversations))
+const report = computed(() => computeChatReport(store.state.conversations))
 
 const numberFormat = new Intl.NumberFormat('zh-CN')
 const dateFormat = new Intl.DateTimeFormat('zh-CN', {
@@ -35,6 +39,41 @@ function formatDecimal(value: number): string {
 function formatDate(timestamp: number | null): string {
   if (timestamp === null) return '—'
   return dateFormat.format(new Date(timestamp)).replace(/\//g, '-')
+}
+
+function fileDate(timestamp = Date.now()): string {
+  const date = new Date(timestamp)
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
+function downloadFile(name: string, content: string, type: string): void {
+  const blob = new Blob([content], { type })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = name
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function exportMarkdown(): void {
+  downloadFile(
+    `deepseek-stats-${fileDate()}.md`,
+    buildMarkdownReport(stats.value, report.value),
+    'text/markdown;charset=utf-8',
+  )
+}
+
+function exportCsv(): void {
+  downloadFile(
+    `deepseek-stats-${fileDate()}.csv`,
+    `\uFEFF${buildCsvReport(stats.value, report.value)}`,
+    'text/csv;charset=utf-8',
+  )
 }
 </script>
 
@@ -86,6 +125,8 @@ function formatDate(timestamp: number | null): string {
 
       <StatsTrendChart :conversations="store.state.conversations" />
 
+      <StatsInsights :report="report" :stats="stats" @select="emit('select', $event)" />
+
       <section class="conversation-section" aria-label="会话明细">
         <div class="section-heading">
           <h3>会话明细</h3>
@@ -122,6 +163,27 @@ function formatDate(timestamp: number | null): string {
       <strong>还没有可统计的会话</strong>
       <p>导入 DeepSeek 导出的 JSON 后，这里会汇总会话、消息和字数。</p>
     </div>
+
+    <template #footer>
+      <span class="export-note">导出在本地生成，不会上传数据</span>
+      <button
+        type="button"
+        class="btn btn-ghost"
+        :disabled="stats.conversationCount === 0"
+        @click="exportMarkdown"
+      >
+        导出 Markdown
+      </button>
+      <button
+        type="button"
+        class="btn btn-ghost"
+        :disabled="stats.conversationCount === 0"
+        @click="exportCsv"
+      >
+        导出 CSV
+      </button>
+      <button type="button" class="btn btn-primary" @click="emit('close')">关闭</button>
+    </template>
   </ModalShell>
 </template>
 
@@ -294,6 +356,12 @@ function formatDate(timestamp: number | null): string {
   line-height: 1.6;
 }
 
+.export-note {
+  margin-right: auto;
+  color: var(--text-tertiary);
+  font-size: 10.5px;
+}
+
 @media (max-width: 560px) {
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -309,6 +377,10 @@ function formatDate(timestamp: number | null): string {
 
   .stat-cell:nth-last-child(-n + 2) {
     border-bottom: 0;
+  }
+
+  .export-note {
+    display: none;
   }
 }
 </style>

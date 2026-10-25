@@ -1,0 +1,115 @@
+import { describe, expect, it } from 'vitest'
+import type { Conversation } from '../types/chat'
+import { computeChatStats } from './stats'
+import { buildCsvReport, buildMarkdownReport, computeChatReport } from './report'
+
+function conversation(overrides: Partial<Conversation> = {}): Conversation {
+  return {
+    id: 'conv',
+    title: '会话',
+    messages: [],
+    fingerprint: 'fingerprint',
+    ...overrides,
+  }
+}
+
+const conversations: Conversation[] = [
+  conversation({
+    id: 'one',
+    title: 'A, "B" | C',
+    model: 'deepseek-reasoner',
+    messages: [
+      {
+        id: 'm1',
+        role: 'user',
+        content: '你好',
+        createdAt: new Date(2026, 0, 1, 9, 30).toISOString(),
+      },
+      {
+        id: 'm2',
+        role: 'assistant',
+        content: 'hello',
+        reasoning: 'think',
+        references: [
+          { title: 'one', url: 'https://example.com' },
+          { title: 'two', url: 'https://example.com/2' },
+        ],
+        attachments: [{ name: 'file.txt' }],
+        createdAt: new Date(2026, 0, 1, 9, 31).toISOString(),
+      },
+      {
+        id: 'm3',
+        role: 'assistant',
+        content: 'again',
+        createdAt: new Date(2026, 0, 2, 10, 5).toISOString(),
+      },
+    ],
+  }),
+  conversation({
+    id: 'two',
+    title: '没有模型',
+    messages: [
+      {
+        id: 'm1',
+        role: 'user',
+        content: 'q',
+        createdAt: new Date(2026, 0, 2, 11).toISOString(),
+      },
+      {
+        id: 'm2',
+        role: 'assistant',
+        content: 'a',
+        createdAt: new Date(2026, 0, 3, 12).toISOString(),
+      },
+    ],
+  }),
+]
+
+describe('computeChatReport', () => {
+  it('aggregates activity, content, models, and conversation sizes', () => {
+    const report = computeChatReport(conversations)
+
+    expect(report.activity.activeDays).toBe(3)
+    expect(report.activity.longestStreak).toBe(3)
+    expect(report.activity.recentStreak).toBe(3)
+    expect(report.activity.peakDay?.count).toBe(2)
+    expect(report.activity.heatmap[3]?.[9]).toBe(2)
+    expect(report.activity.heatmap[4]?.[10]).toBe(1)
+    expect(report.activity.heatmap[4]?.[11]).toBe(1)
+    expect(report.activity.heatmap[5]?.[12]).toBe(1)
+    expect(report.activity.heatmapMax).toBe(2)
+
+    expect(report.content).toMatchObject({
+      userMessages: 2,
+      assistantMessages: 3,
+      userCharacters: 3,
+      assistantCharacters: 11,
+      reasoningMessages: 1,
+      reasoningCharacters: 5,
+      referenceMessages: 1,
+      references: 2,
+      attachmentMessages: 1,
+      attachments: 1,
+    })
+
+    expect(report.lengthDistribution.map((bucket) => bucket.count)).toEqual([0, 1, 1, 0, 0])
+    expect(report.models.map((model) => [model.model, model.conversations, model.messages])).toEqual([
+      ['deepseek-reasoner', 1, 3],
+      ['未标注模型', 1, 2],
+    ])
+    expect(report.conversations[0]?.characters).toBe(17)
+    expect(report.conversations[0]?.durationMs).toBeGreaterThan(0)
+  })
+
+  it('exports a markdown and csv report', () => {
+    const stats = computeChatStats(conversations)
+    const report = computeChatReport(conversations)
+    const markdown = buildMarkdownReport(stats, report, Date.now())
+    const csv = buildCsvReport(stats, report, Date.now())
+
+    expect(markdown).toContain('# DeepSeek 对话统计')
+    expect(markdown).toContain('A, "B" \\| C')
+    expect(csv).toContain('会话,模型,开始时间,消息数,字数,持续时间')
+    expect(csv).toContain('"A, ""B"" | C"')
+  })
+})
