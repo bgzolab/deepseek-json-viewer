@@ -108,9 +108,11 @@ const qa = computed(() => {
   }
 })
 
-const maxModelMessages = computed(() =>
-  Math.max(1, ...props.report.models.map((model) => model.messages)),
-)
+const maxModelMessages = computed(() => {
+  let max = 1
+  for (const model of props.report.models) max = Math.max(max, model.messages)
+  return max
+})
 
 const contentCards = computed(() => {
   const content = props.report.content

@@ -164,4 +164,28 @@ describe('computeChatReport', () => {
       new Date(2026, 0, 2, 12).getTime(),
     )
   })
+
+  it('does not count system messages as activity', () => {
+    const report = computeChatReport([
+      conversation({
+        messages: [
+          {
+            id: 'm1',
+            role: 'user',
+            content: 'hello',
+            createdAt: new Date(2026, 0, 1, 12).toISOString(),
+          },
+          {
+            id: 'm2',
+            role: 'system',
+            content: 'instructions',
+            createdAt: new Date(2026, 0, 2, 12).toISOString(),
+          },
+        ],
+      }),
+    ])
+
+    expect(report.activity.activeDays).toBe(1)
+    expect(report.conversations[0]?.durationMs).toBe(0)
+  })
 })

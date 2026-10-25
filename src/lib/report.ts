@@ -143,6 +143,7 @@ export function computeChatReport(conversations: readonly Conversation[]): ChatR
         content.attachments += message.attachments.length
       }
 
+      if (message.role !== 'user' && message.role !== 'assistant') continue
       const timestamp = toTime(message.createdAt)
       if (!isChatTimestamp(timestamp)) continue
 
