@@ -171,7 +171,10 @@ function timelineGranularity(spanDays: number): TimelineGranularity {
 }
 
 /** Builds a message-count and character timeline for the trend chart. */
-export function computeChatTimeline(conversations: readonly Conversation[]): ChatTimeline {
+export function computeChatTimeline(
+  conversations: readonly Conversation[],
+  rangeDays?: number,
+): ChatTimeline {
   const points: Array<{ timestamp: number; role: 'user' | 'assistant'; characters: number }> = []
 
   for (const conversation of conversations) {
@@ -194,6 +197,10 @@ export function computeChatTimeline(conversations: readonly Conversation[]): Cha
   for (const point of points) {
     if (point.timestamp < earliest) earliest = point.timestamp
     if (point.timestamp > latest) latest = point.timestamp
+  }
+
+  if (rangeDays && rangeDays > 0) {
+    earliest = Math.max(earliest, latest - (rangeDays - 1) * DAY_MS)
   }
 
   const granularity = timelineGranularity((latest - earliest) / DAY_MS)

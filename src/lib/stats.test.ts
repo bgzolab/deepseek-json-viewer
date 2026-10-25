@@ -134,4 +134,37 @@ describe('computeChatTimeline', () => {
     expect(timeline.granularity).toBe('week')
     expect(timeline.buckets.length).toBeGreaterThan(10)
   })
+
+  it('limits the timeline to the latest range', () => {
+    const timeline = computeChatTimeline(
+      [
+        conversation({
+          messages: [
+            {
+              id: 'm1',
+              role: 'user',
+              content: 'old',
+              createdAt: new Date(2026, 0, 1, 12).toISOString(),
+            },
+            {
+              id: 'm2',
+              role: 'assistant',
+              content: 'recent',
+              createdAt: new Date(2026, 0, 20, 12).toISOString(),
+            },
+          ],
+        }),
+      ],
+      7,
+    )
+
+    expect(timeline.granularity).toBe('day')
+    expect(timeline.buckets).toHaveLength(7)
+    expect(
+      timeline.buckets.reduce(
+        (total, bucket) => total + bucket.userMessages + bucket.assistantMessages,
+        0,
+      ),
+    ).toBe(1)
+  })
 })

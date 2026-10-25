@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { computeChatStats, computeChatTimeline } from '../lib/stats'
+import { computeChatStats } from '../lib/stats'
 import { useChatStore } from '../stores/chatStore'
 import AppIcon from './AppIcon.vue'
 import ModalShell from './ModalShell.vue'
@@ -16,7 +16,6 @@ const emit = defineEmits<{
 
 const store = useChatStore()
 const stats = computed(() => computeChatStats(store.state.conversations))
-const timeline = computed(() => computeChatTimeline(store.state.conversations))
 
 const numberFormat = new Intl.NumberFormat('zh-CN')
 const dateFormat = new Intl.DateTimeFormat('zh-CN', {
@@ -85,7 +84,7 @@ function formatDate(timestamp: number | null): string {
         平均每条 {{ formatDecimal(stats.averageCharactersPerMessage) }} 字
       </p>
 
-      <StatsTrendChart :timeline="timeline" />
+      <StatsTrendChart :conversations="store.state.conversations" />
 
       <section class="conversation-section" aria-label="会话明细">
         <div class="section-heading">
