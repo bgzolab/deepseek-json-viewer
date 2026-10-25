@@ -30,14 +30,14 @@ const repoUrl = 'https://github.com/bgzolab/deepseek-json-viewer'
       </div>
 
       <p class="about-copy">
-        导入 DeepSeek 导出的 JSON，即可离线浏览、搜索和整理会话。所有解析与数据都留在当前浏览器，不会上传任何聊天内容。
+        导入 DeepSeek 导出的 JSON 文件，即可离线浏览、搜索会话。所有解析与数据都留在浏览器中，不会上传任何聊天内容。
       </p>
 
       <div class="about-links">
         <a :href="repoUrl" target="_blank" rel="noopener noreferrer">
           <span class="about-link-icon"><AppIcon name="link" :size="16" /></span>
           <span class="about-link-copy">
-            <span>GitHub 仓库</span>
+            <span>GitHub</span>
             <small>github.com/bgzolab/deepseek-json-viewer</small>
           </span>
           <AppIcon name="external" :size="14" class="about-link-arrow" />
@@ -46,15 +46,15 @@ const repoUrl = 'https://github.com/bgzolab/deepseek-json-viewer'
           <span class="about-link-icon"><AppIcon name="message" :size="16" /></span>
           <span class="about-link-copy">
             <span>问题反馈</span>
-            <small>报告问题或提出功能建议</small>
+            <small>报告问题或提出建议</small>
           </span>
           <AppIcon name="external" :size="14" class="about-link-arrow" />
         </a>
-        <a href="https://www.deepseek.com" target="_blank" rel="noopener noreferrer">
+        <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer">
           <span class="about-link-icon"><AppIcon name="link" :size="16" /></span>
           <span class="about-link-copy">
             <span>友情链接</span>
-            <small>DeepSeek 官网</small>
+            <small>和 DeepSeek 对话</small>
           </span>
           <AppIcon name="external" :size="14" class="about-link-arrow" />
         </a>
@@ -62,7 +62,7 @@ const repoUrl = 'https://github.com/bgzolab/deepseek-json-viewer'
 
       <div class="about-note">
         <AppIcon name="shield" :size="15" />
-        <span>数据仅保存在当前浏览器的 IndexedDB 中，清除网站数据会同时删除会话。</span>
+        <span>数据仅存在浏览器的 IndexedDB 中，清除缓存会同时删除会话</span>
       </div>
     </div>
 
