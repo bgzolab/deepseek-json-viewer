@@ -21,6 +21,7 @@ A local-first, browser-only viewer for DeepSeek chat exports. Import one or more
 - DeepSeek `mapping` exports plus common generic export shapes
 - Conversation-level and message-level merging/deduplication
 - IndexedDB persistence, per-conversation delete, and clear-all
+- Footer menu with local usage statistics, an about page, and links
 - DeepSeek-style layout with Markdown, tables, reasoning, citations, and copyable code blocks
 - Full-text search across titles, messages, and reasoning, with match navigation
 - Responsive sidebar drawer for mobile; assistant avatar and welcome artwork are bundled locally

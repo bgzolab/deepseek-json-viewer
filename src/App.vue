@@ -4,15 +4,19 @@ import type { ImportReport } from './types/import'
 import { useChatStore } from './stores/chatStore'
 import AppIcon from './components/AppIcon.vue'
 import AppSidebar from './components/AppSidebar.vue'
+import AboutDialog from './components/AboutDialog.vue'
 import ChatView from './components/ChatView.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import ImportProgressOverlay from './components/ImportProgressOverlay.vue'
 import ImportReportDialog from './components/ImportReportDialog.vue'
+import StatsDialog from './components/StatsDialog.vue'
 
 const store = useChatStore()
 const fileInput = ref<HTMLInputElement | null>(null)
 const report = ref<ImportReport | null>(null)
 const reportOpen = ref(false)
+const aboutOpen = ref(false)
+const statsOpen = ref(false)
 const isDragging = ref(false)
 const dismissedDatabaseError = ref(false)
 const isMobileViewport = ref(false)
@@ -86,7 +90,13 @@ function openFilePicker(): void {
 }
 
 function hasOpenDialog(): boolean {
-  return reportOpen.value || confirmState.open || store.state.importing
+  return (
+    reportOpen.value ||
+    confirmState.open ||
+    aboutOpen.value ||
+    statsOpen.value ||
+    store.state.importing
+  )
 }
 
 async function runImport(files: File[]): Promise<void> {
@@ -266,6 +276,8 @@ onBeforeUnmount(() => {
         @import="openFilePicker"
         @request-clear="requestClear"
         @request-delete="requestDelete"
+        @open-about="aboutOpen = true"
+        @open-stats="statsOpen = true"
       />
     </div>
 
@@ -316,6 +328,9 @@ onBeforeUnmount(() => {
       :report="report"
       @close="reportOpen = false"
     />
+
+    <StatsDialog :open="statsOpen" @close="statsOpen = false" />
+    <AboutDialog :open="aboutOpen" @close="aboutOpen = false" />
 
     <ConfirmDialog
       :open="confirmState.open"
