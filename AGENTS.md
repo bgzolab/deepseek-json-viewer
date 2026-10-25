@@ -37,6 +37,7 @@
 - Persistence: IndexedDB `deepseek-json-viewer` v1, object store `conversations`, keyPath `id`. Each record is a `StoredConversation` including its messages.
 - Search index: an in-memory `Map` in the store. `searchIndexes` is non-reactive, so every mutation must also increment `indexVersion` or call `refreshSearchIndex` / `rebuildSearchIndexes`.
 - Markdown: `lib/markdown.ts` (marked renderer + DOMPurify + citation markers + search highlighting). `MarkdownBody.vue` is the only `v-html` boundary.
+- i18n: `lib/i18n/` owns locale state, interpolation, plural selection, and `Intl` formatting. `types.ts` defines `localeOptions` (the `Locale` union is derived from it), `locales/*.ts` hold dictionaries, `messages.ts` is the Vue-free dictionary/translation core used by the import worker, and `index.ts` adds the reactive locale and persistence. The `zh-CN` dictionary defines `MessageKey`; `en` uses `satisfies Record<MessageKey, MessageEntry>`, so a missing translation is a type error. To add a language, add a locale option and its dictionary; TypeScript forces the remaining wiring. Also update the pre-paint locale whitelist/fallback in `index.html`, which is plain JavaScript and not type-checked. Use `t()` in components; date/number formatting reads the active locale.
 - Theme: `lib/theme.ts` stores `auto|light|dark` in `dsjv:theme`, resolves `auto` against `prefers-color-scheme`, and sets `data-theme` on `<html>`. Dark tokens live in `tokens.css` under `:root[data-theme='dark']`; `index.html` applies the stored theme before first paint.
 - Brand assets: `src/lib/assets.ts` exposes `${BASE_URL}`-aware avatar/hero URLs. Public images live in `public/images/`.
 - `target/` is an ignored reference snapshot of the real DeepSeek UI, not part of the application.
@@ -54,7 +55,7 @@
 - DeepSeek fragments: `REQUEST` = user, `RESPONSE` = assistant, `THINK` = reasoning, `TOOL_SEARCH` = references, `FILE` = attachment metadata only. Text can contain both `[!reference:N]` and `[reference:N]` markers.
 - Supported generic shapes: top-level array, `{conversations|chats|data}`, nested `data.conversations`, or a single conversation; message arrays `messages|message_list|chat_messages|turns|history`. Full alias lists live at the top of `adapter.ts`; add tests for new aliases.
 - Dedupe semantics: conversations match by raw ID, then by fingerprint of title + sorted message fingerprints; messages match by raw ID, then by `role + content + createdAt`. Newer conversation metadata wins during a merge. Do not change these rules without updating `merge.test.ts` and `hash.test.ts`.
-- localStorage is only for `dsjv:selected-conversation`, `dsjv:sidebar-collapsed`, and `dsjv:theme`. Never store chat content there.
+- localStorage is only for `dsjv:selected-conversation`, `dsjv:sidebar-collapsed`, `dsjv:theme`, and `dsjv:locale`. Never store chat content there.
 - Service worker: production only. `public/sw.js` precaches index-referenced assets, discovers the Vite import worker chunk from the app bundle, and caches the avatar/hero images; bump the cache name when changing the shell cache.
 - `data/raw/` is ignored. Never commit real chat exports.
 - UI convention: intentionally mirrors the DeepSeek web chat. Preserve the layout tokens (260px sidebar, 60px header, 752px thread, 776px composer), colors in `src/styles/tokens.css`, and inline SVG icons via `AppIcon.vue`. Avoid reintroducing gradients, glows, or marketing-style cards.
@@ -64,13 +65,13 @@
 
 ## Known deferred edge cases
 
-- Search occurrence counts come from raw Markdown while `<mark>` indexes come from rendered/sanitized text. Queries consisting of Markdown syntax or spanning stripped markup can overcount; message-level scroll fallback prevents breakage. Fixing this properly requires making rendered text the search-index source.
+- Search occurrence counts come from raw Markdown while `<mark>` indexes come from rendered/sanitized text. Queries consisting of Markdown syntax or spanning stripped markup can overcount; message-level scroll fallback prevents breakage. Image placeholders and code language labels are also excluded from highlighting, so queries matching only those labels fall back to message-level scrolling. Fixing this properly requires making rendered text the search-index source.
 - Messages with neither an ID nor a timestamp are intentionally deduplicated by `role + content` fingerprint per the existing contract. Legitimate identical messages in such minimal exports can collapse; changing this needs a product decision about cross-import merge semantics.
 - Re-importing a conversation after its active mapping branch changes keeps messages from the previous flattened branch (union merge). Message paths/node IDs are not persisted, so branch pruning/replacement needs a path-aware data model and a product decision.
 - `parseFile` creates and terminates one worker per file. Multi-file imports pay repeated worker startup cost; a reusable worker queue would be a performance optimization, not a correctness issue.
 
 ## Tests and manual verification
 
-- Unit tests cover the parser/adapter, merge/dedupe, hash, and search only (`src/lib/*.test.ts`). There is no DOM, IndexedDB, worker, or service-worker test suite.
-- For import, persistence, markdown, search-highlighting, or service-worker changes, run a real browser flow: import `data/raw/conversations.json`, reload, search and jump matches, re-import for de-duplication, clear data, and check an offline production reload.
+- Unit tests cover the parser/adapter, merge/dedupe, hash, search, reports, theme, and i18n only (`src/lib/*.test.ts`). There is no DOM, IndexedDB, worker, or service-worker test suite.
+- For import, persistence, markdown, search-highlighting, service-worker, or i18n changes, run a real browser flow: import `data/raw/conversations.json`, reload, search and jump matches, re-import for de-duplication, switch between Chinese and English, clear data, and check an offline production reload.
 - `npm run build` output (`dist/`) is ignored; do not commit it.

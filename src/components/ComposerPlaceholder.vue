@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '../lib/i18n'
 import AppIcon from './AppIcon.vue'
 </script>
 
@@ -6,33 +7,45 @@ import AppIcon from './AppIcon.vue'
   <footer class="composer-area">
     <div class="composer" aria-disabled="true">
       <div class="composer-input">
-        <span>预览模式，暂不支持发送消息</span>
+        <span>{{ t('composer.placeholder') }}</span>
       </div>
 
       <div class="composer-toolbar">
         <div class="composer-modes">
           <span class="mode-chip">
             <AppIcon name="shield" :size="13" />
-            只读预览
+            {{ t('composer.readOnly') }}
           </span>
           <span class="mode-chip">
             <AppIcon name="database" :size="13" />
-            本地数据
+            {{ t('composer.localData') }}
           </span>
         </div>
 
         <div class="composer-actions">
-          <button type="button" class="composer-tool" disabled tabindex="-1" aria-label="上传附件">
+          <button
+            type="button"
+            class="composer-tool"
+            disabled
+            tabindex="-1"
+            :aria-label="t('composer.uploadAttachment')"
+          >
             <AppIcon name="paperclip" :size="17" />
           </button>
-          <button type="button" class="composer-send" disabled tabindex="-1" aria-label="发送">
+          <button
+            type="button"
+            class="composer-send"
+            disabled
+            tabindex="-1"
+            :aria-label="t('composer.send')"
+          >
             <AppIcon name="arrow-up" :size="17" :stroke-width="2" />
           </button>
         </div>
       </div>
     </div>
 
-    <p class="composer-hint">本地预览模式 · 不会发送任何请求</p>
+    <p class="composer-hint">{{ t('composer.hint') }}</p>
   </footer>
 </template>
 

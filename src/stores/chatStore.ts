@@ -12,6 +12,7 @@ import {
   loadAllConversations,
   putConversationsInBatches,
 } from '../lib/db'
+import { t } from '../lib/i18n'
 import { createStoredConversation, mergeConversations } from '../lib/merge'
 import { parseFile } from '../lib/parseFile'
 import {
@@ -53,7 +54,6 @@ const state = reactive({
     fileCount: 0,
     written: 0,
     total: 0,
-    message: '',
   } as ImportProgress,
 })
 
@@ -214,7 +214,7 @@ export async function initializeStore(): Promise<void> {
     state.status = 'ready'
   } catch (error) {
     state.status = 'ready'
-    state.loadError = error instanceof Error ? error.message : '无法读取本地数据库'
+    state.loadError = error instanceof Error ? error.message : t('app.databaseReadFailed')
   }
 }
 
@@ -321,11 +321,11 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
   }
 
   if (state.importing) {
-    report.fatalError = '已有导入任务正在进行'
+    report.fatalError = t('import.busy')
     return report
   }
   if (files.length === 0) {
-    report.fatalError = '没有选择文件'
+    report.fatalError = t('import.noFiles')
     return report
   }
 
@@ -338,7 +338,6 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
     fileCount: files.length,
     written: 0,
     total: 0,
-    message: '正在准备导入…',
   })
 
   // Vue's reactive proxies cannot be written to IndexedDB. Keep the import working set plain.
@@ -368,7 +367,6 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
         phase: 'parsing',
         fileName: file.name,
         fileIndex: fileIndex + 1,
-        message: `正在解析 ${file.name}（${fileIndex + 1}/${files.length}）`,
       })
 
       let outcome: ImportFileOutcome
@@ -418,7 +416,7 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
       } catch (error) {
         outcome = emptyFileOutcome(
           file,
-          error instanceof Error ? error.message : '解析失败，原因未知',
+          error instanceof Error ? error.message : t('import.parseFailed'),
         )
       }
 
@@ -437,15 +435,10 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
         fileIndex: files.length,
         written: 0,
         total: changed.length,
-        message: '正在写入本地数据库…',
       })
       await putConversationsInBatches(changed, {
         onProgress: (written, total) => {
-          setProgress({
-            written,
-            total,
-            message: `正在写入本地数据库（${written}/${total}）`,
-          })
+          setProgress({ written, total })
         },
       })
     }
@@ -459,7 +452,7 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
     }
   } catch (error) {
     report.fatalError =
-      error instanceof Error ? error.message : '导入过程中发生未知错误，无法写入本地数据库'
+      error instanceof Error ? error.message : t('import.unknownError')
     try {
       await reloadFromDatabase()
     } catch {
@@ -469,7 +462,7 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
     report.finishedAt = Date.now()
     report.totals = summarize(report.files)
     state.importing = false
-    setProgress({ active: false, phase: 'done', message: '' })
+    setProgress({ active: false, phase: 'done' })
   }
 
   return report
@@ -477,7 +470,7 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
 
 function ensureNotImporting(): void {
   if (state.importing) {
-    throw new Error('导入正在进行，请稍后再操作。')
+    throw new Error(t('import.busyLater'))
   }
 }
 

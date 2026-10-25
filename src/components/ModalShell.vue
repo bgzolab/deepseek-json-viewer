@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { t } from '../lib/i18n'
 import { acquireModalInert, releaseModalInert } from '../lib/modalStack'
 import AppIcon from './AppIcon.vue'
 
@@ -100,7 +101,7 @@ onBeforeUnmount(() => {
               v-if="dismissible"
               type="button"
               class="icon-button modal-close"
-              aria-label="关闭"
+              :aria-label="t('common.close')"
               @click="requestClose"
             >
               <AppIcon name="x" :size="17" />

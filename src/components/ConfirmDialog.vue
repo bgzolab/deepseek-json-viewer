@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '../lib/i18n'
 import AppIcon from './AppIcon.vue'
 import ModalShell from './ModalShell.vue'
 
@@ -15,8 +16,8 @@ withDefaults(
   }>(),
   {
     detail: '',
-    confirmLabel: '确认',
-    cancelLabel: '取消',
+    confirmLabel: '',
+    cancelLabel: '',
     danger: false,
     busy: false,
   },
@@ -46,7 +47,7 @@ const emit = defineEmits<{
 
     <template #footer>
       <button type="button" class="btn btn-ghost" :disabled="busy" @click="emit('close')">
-        {{ cancelLabel }}
+        {{ cancelLabel || t('common.cancel') }}
       </button>
       <button
         type="button"
@@ -56,7 +57,7 @@ const emit = defineEmits<{
         @click="emit('confirm')"
       >
         <span v-if="busy" class="spinner" />
-        <span>{{ confirmLabel }}</span>
+        <span>{{ confirmLabel || t('common.confirm') }}</span>
       </button>
     </template>
   </ModalShell>

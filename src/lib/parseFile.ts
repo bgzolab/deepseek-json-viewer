@@ -1,4 +1,5 @@
 import { parseExportText, type ParseResult } from './adapter'
+import { locale } from './i18n'
 
 interface WorkerSuccess {
   ok: true
@@ -16,7 +17,7 @@ const WORKER_TIMEOUT_MS = 60_000
 
 async function parseOnMainThread(file: File): Promise<ParseResult> {
   const text = await file.text()
-  return parseExportText(text, file.name)
+  return parseExportText(text, file.name, locale.value)
 }
 
 export async function parseFile(file: File): Promise<ParseResult> {
@@ -88,7 +89,7 @@ export async function parseFile(file: File): Promise<ParseResult> {
       fallbackToMainThread(true)
     }
 
-    worker.postMessage({ file })
+    worker.postMessage({ file, locale: locale.value })
     watchdog = window.setTimeout(() => {
       fallbackToMainThread(true)
     }, WORKER_TIMEOUT_MS)

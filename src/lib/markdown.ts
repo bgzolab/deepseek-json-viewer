@@ -1,6 +1,7 @@
 import DOMPurify from 'dompurify'
 import { marked, Renderer, type Tokens } from 'marked'
 import type { ChatReference } from '../types/chat'
+import { t } from './i18n'
 
 function escapeHtml(value: string): string {
   return value
@@ -37,7 +38,7 @@ renderer.code = ({ text, lang }: Tokens.Code): string => {
     '<div class="md-code-block">',
     '<div class="md-code-head">',
     `<span class="md-code-lang">${escapeHtml(label)}</span>`,
-    '<button type="button" class="md-code-copy" data-copy-code>复制</button>',
+    `<button type="button" class="md-code-copy" data-copy-code>${escapeHtml(t('markdown.copy'))}</button>`,
     '</div>',
     `<pre><code${className}>${escapeHtml(text)}</code></pre>`,
     '</div>',
@@ -54,13 +55,16 @@ renderer.link = function ({ href, title, tokens }: Tokens.Link): string {
 }
 
 renderer.image = ({ text }: Tokens.Image): string => {
-  return `<span class="md-image-placeholder">图片已省略${text ? `：${escapeHtml(text)}` : ''}</span>`
+  const label = text
+    ? t('markdown.imageOmittedWithText', { text })
+    : t('markdown.imageOmitted')
+  return `<span class="md-image-placeholder">${escapeHtml(label)}</span>`
 }
 
 renderer.checkbox = ({ checked }: Tokens.Checkbox): string => {
-  return `<span class="md-task-checkbox${checked ? ' is-checked' : ''}" role="img" aria-label="${
-    checked ? '已完成' : '未完成'
-  }"></span>`
+  return `<span class="md-task-checkbox${checked ? ' is-checked' : ''}" role="img" aria-label="${escapeHtml(
+    checked ? t('markdown.taskDone') : t('markdown.taskPending'),
+  )}"></span>`
 }
 
 marked.setOptions({
@@ -171,6 +175,7 @@ function escapeRegExp(value: string): string {
 }
 
 const SKIPPED_HIGHLIGHT_TAGS = new Set(['SCRIPT', 'STYLE', 'BUTTON', 'TEXTAREA'])
+const SKIPPED_HIGHLIGHT_SELECTOR = '.md-image-placeholder, .md-code-lang'
 
 export function highlightSearchInHtml(
   html: string,
@@ -187,7 +192,11 @@ export function highlightSearchInHtml(
   let node = walker.nextNode()
   while (node) {
     const parent = node.parentElement
-    if (parent && !SKIPPED_HIGHLIGHT_TAGS.has(parent.tagName)) {
+    if (
+      parent &&
+      !SKIPPED_HIGHLIGHT_TAGS.has(parent.tagName) &&
+      !parent.closest(SKIPPED_HIGHLIGHT_SELECTOR)
+    ) {
       textNodes.push(node as Text)
     }
     node = walker.nextNode()

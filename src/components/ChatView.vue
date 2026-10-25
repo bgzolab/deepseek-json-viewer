@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
+import { locale } from '../lib/i18n'
 import { useChatStore } from '../stores/chatStore'
 import ChatHeader from './ChatHeader.vue'
 import ComposerPlaceholder from './ComposerPlaceholder.vue'
@@ -30,6 +31,15 @@ async function focusActiveMatch(): Promise<void> {
 
 watch(
   () => store.state.focusToken,
+  () => {
+    void focusActiveMatch()
+  },
+  { flush: 'post' },
+)
+
+// Markdown re-renders on language change and drops the imperative `.is-current` mark.
+watch(
+  locale,
   () => {
     void focusActiveMatch()
   },

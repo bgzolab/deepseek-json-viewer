@@ -1,4 +1,6 @@
 import type { Conversation } from '../types/chat'
+import { conversationTitle } from './conversationTitle'
+import { formatNumberFor, getIntlCached, locale, t, type MessageKey } from './i18n'
 import type { ChatStats } from './stats'
 import { conversationStartedAt, countCharacters, conversationLastActivity, isChatTimestamp } from './stats'
 import { toTime } from './time'
@@ -61,12 +63,12 @@ export interface ChatReport {
   content: ContentReport
 }
 
-const LENGTH_BUCKETS = [
-  { label: '0 条', min: 0, max: 0 },
-  { label: '1–2 条', min: 1, max: 2 },
-  { label: '3–10 条', min: 3, max: 10 },
-  { label: '11–50 条', min: 11, max: 50 },
-  { label: '51+ 条', min: 51, max: Infinity },
+const LENGTH_BUCKETS: Array<{ key: MessageKey; min: number; max: number }> = [
+  { key: 'report.lengthBucket0', min: 0, max: 0 },
+  { key: 'report.lengthBucket1', min: 1, max: 2 },
+  { key: 'report.lengthBucket2', min: 3, max: 10 },
+  { key: 'report.lengthBucket3', min: 11, max: 50 },
+  { key: 'report.lengthBucket4', min: 51, max: Infinity },
 ]
 
 function localDayStart(timestamp: number): number {
@@ -77,12 +79,16 @@ function localDayStart(timestamp: number): number {
 export function formatDuration(milliseconds: number): string {
   if (!Number.isFinite(milliseconds) || milliseconds <= 0) return '—'
   if (milliseconds < 3_600_000) {
-    return `${Math.max(1, Math.round(milliseconds / 60_000))} 分钟`
+    const minutes = Math.max(1, Math.round(milliseconds / 60_000))
+    if (minutes < 60) return t('report.durationMinutes', { count: minutes })
   }
   if (milliseconds < DAY_MS) {
-    return `${(milliseconds / 3_600_000).toFixed(1)} 小时`
+    const hours = Math.round((milliseconds / 3_600_000) * 10) / 10
+    if (hours < 24) return t('report.durationHours', { count: hours })
   }
-  return `${(milliseconds / DAY_MS).toFixed(1)} 天`
+  return t('report.durationDays', {
+    count: Math.round((milliseconds / DAY_MS) * 10) / 10,
+  })
 }
 
 export function computeChatReport(conversations: readonly Conversation[]): ChatReport {
@@ -110,7 +116,7 @@ export function computeChatReport(conversations: readonly Conversation[]): ChatR
     let characters = 0
     let firstMessageTime: number | null = null
     let lastMessageTime: number | null = null
-    const model = conversation.model?.trim() || '未标注模型'
+    const model = conversation.model?.trim() || t('report.unlabeledModel')
     const modelEntry = models.get(model) ?? {
       model,
       conversations: 0,
@@ -223,7 +229,7 @@ export function computeChatReport(conversations: readonly Conversation[]): ChatR
     },
     conversations: ranks.sort((left, right) => left.startedAt - right.startedAt),
     lengthDistribution: LENGTH_BUCKETS.map((bucket, index) => ({
-      label: bucket.label,
+      label: t(bucket.key),
       count: lengthCounts[index] ?? 0,
     })),
     modelCount: models.size,
@@ -237,14 +243,14 @@ const MODEL_DISPLAY_LIMIT = 20
 function foldModels(models: Map<string, ModelBreakdown>): ModelBreakdown[] {
   const sorted = [...models.values()].sort(
     (left, right) =>
-      right.messages - left.messages || left.model.localeCompare(right.model, 'zh-CN'),
+      right.messages - left.messages || left.model.localeCompare(right.model, locale.value),
   )
   if (sorted.length <= MODEL_DISPLAY_LIMIT) return sorted
 
   const visible = sorted.slice(0, MODEL_DISPLAY_LIMIT)
   const rest = sorted.slice(MODEL_DISPLAY_LIMIT)
   visible.push({
-    model: `其他 ${rest.length} 个模型`,
+    model: t('report.otherModels', { count: rest.length }),
     conversations: rest.reduce((total, model) => total + model.conversations, 0),
     messages: rest.reduce((total, model) => total + model.messages, 0),
     characters: rest.reduce((total, model) => total + model.characters, 0),
@@ -252,41 +258,74 @@ function foldModels(models: Map<string, ModelBreakdown>): ModelBreakdown[] {
   return visible
 }
 
-const numberFormat = new Intl.NumberFormat('zh-CN')
-const dateTimeFormat = new Intl.DateTimeFormat('zh-CN', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-})
-const dayFormat = new Intl.DateTimeFormat('zh-CN', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-})
+function decimalFormatter(): Intl.NumberFormat {
+  const value = locale.value
+  return getIntlCached(
+    `decimal:${value}`,
+    () =>
+      new Intl.NumberFormat(value, {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }),
+  )
+}
+
+function dateTimeFormatter(): Intl.DateTimeFormat {
+  const value = locale.value
+  return getIntlCached(
+    `dateTime:${value}`,
+    () =>
+      new Intl.DateTimeFormat(value, {
+        year: 'numeric',
+        month: value === 'en' ? 'short' : '2-digit',
+        day: value === 'en' ? 'numeric' : '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }),
+  )
+}
+
+function dayFormatter(): Intl.DateTimeFormat {
+  const value = locale.value
+  return getIntlCached(
+    `day:${value}`,
+    () =>
+      new Intl.DateTimeFormat(value, {
+        year: 'numeric',
+        month: value === 'en' ? 'short' : '2-digit',
+        day: value === 'en' ? 'numeric' : '2-digit',
+      }),
+  )
+}
 
 export function formatNumber(value: number): string {
-  return numberFormat.format(value)
+  return formatNumberFor(locale.value, value)
 }
 
 export function formatDecimal(value: number): string {
-  return value >= 100 ? formatNumber(Math.round(value)) : value.toFixed(1)
+  // Keep very large averages compact; one decimal is stable below 1,000.
+  return value < 1_000
+    ? decimalFormatter().format(value)
+    : formatNumberFor(locale.value, Math.round(value))
 }
 
 export function formatPercent(value: number, total: number): string {
   return total > 0 ? `${Math.round((value / total) * 100)}%` : '0%'
 }
 
+function normalizeDateFormat(value: string): string {
+  return locale.value === 'zh-CN' ? value.replace(/\//g, '-') : value
+}
+
 function formatTimestamp(timestamp: number | null): string {
   if (timestamp === null || timestamp <= 0) return '—'
-  return dateTimeFormat.format(new Date(timestamp)).replace(/\//g, '-')
+  return normalizeDateFormat(dateTimeFormatter().format(new Date(timestamp)))
 }
 
 export function formatDay(timestamp: number | null): string {
   if (timestamp === null || timestamp <= 0) return '—'
-  return dayFormat.format(new Date(timestamp)).replace(/\//g, '-')
+  return normalizeDateFormat(dayFormatter().format(new Date(timestamp)))
 }
 
 function escapeMarkdown(value: string): string {
@@ -325,81 +364,142 @@ export function buildMarkdownReport(
   const averageQuestion = average(content.userCharacters, content.userMessages)
   const averageAnswer = average(content.assistantCharacters, content.assistantMessages)
   const responseRatio = averageQuestion > 0 ? averageAnswer / averageQuestion : 0
+  const untitled = t('conversation.untitled')
+  const timeSpan =
+    stats.spanDays > 0
+      ? t('report.timeSpanValue', {
+          count: stats.spanDays,
+          days: stats.spanDays,
+          from: formatDay(stats.earliest),
+          to: formatDay(stats.latest),
+        })
+      : '—'
+  const peakDay = report.activity.peakDay
   const lines = [
-    '# DeepSeek 对话统计',
+    `# ${t('report.docTitle')}`,
     '',
-    `生成时间：${formatTimestamp(generatedAt)}`,
+    t('report.generatedAt', { time: formatTimestamp(generatedAt) }),
     '',
-    '## 总览',
+    `## ${t('report.overview')}`,
     '',
-    '| 指标 | 数值 |',
+    `| ${t('report.metric')} | ${t('report.value')} |`,
     '| --- | --- |',
-    `| 会话数 | ${formatNumber(stats.conversationCount)} |`,
-    `| 消息数 | ${formatNumber(stats.messageCount)}（我 ${formatNumber(stats.userMessageCount)} / DeepSeek ${formatNumber(stats.assistantMessageCount)}） |`,
-    `| 字数 | ${formatNumber(stats.characterCount)}（含推理） |`,
-    `| 时间跨度 | ${stats.spanDays > 0 ? `${formatNumber(stats.spanDays)} 天（${formatDay(stats.earliest)} – ${formatDay(stats.latest)}）` : '—'} |`,
+    `| ${t('report.conversationCount')} | ${formatNumber(stats.conversationCount)} |`,
+    `| ${t('report.messageCount')} | ${t('report.messagesBreakdown', {
+      total: stats.messageCount,
+      user: stats.userMessageCount,
+      assistant: stats.assistantMessageCount,
+    })} |`,
+    `| ${t('report.characters')} | ${t('report.charactersValue', {
+      count: stats.characterCount,
+    })} |`,
+    `| ${t('report.timeSpan')} | ${timeSpan} |`,
     '',
-    `平均每会话 ${formatDecimal(stats.averageMessagesPerConversation)} 条消息 · 日均 ${formatDecimal(stats.messagesPerDay)} 条 · 平均每条 ${formatDecimal(stats.averageCharactersPerMessage)} 字`,
+    t('report.summary', {
+      avgMessages: formatDecimal(stats.averageMessagesPerConversation),
+      perDay: formatDecimal(stats.messagesPerDay),
+      avgChars: formatDecimal(stats.averageCharactersPerMessage),
+    }),
     '',
-    '## 活跃度',
+    `## ${t('report.activity')}`,
     '',
-    '| 活跃天数 | 最长连续 | 最近连续 | 最活跃一天 |',
+    `| ${t('report.activeDays')} | ${t('report.longestStreak')} | ${t('report.recentStreak')} | ${t('report.peakDay')} |`,
     '| --- | --- | --- | --- |',
-    `| ${formatNumber(report.activity.activeDays)} | ${formatNumber(report.activity.longestStreak)} 天 | ${formatNumber(report.activity.recentStreak)} 天 | ${formatDay(report.activity.peakDay?.start ?? null)}（${formatNumber(report.activity.peakDay?.count ?? 0)} 条） |`,
+    `| ${formatNumber(report.activity.activeDays)} | ${t('unit.days', {
+      count: report.activity.longestStreak,
+    })} | ${t('unit.days', {
+      count: report.activity.recentStreak,
+    })} | ${t('report.peakDayValue', {
+      date: formatDay(peakDay?.start ?? null),
+      count: peakDay?.count ?? 0,
+    })} |`,
     '',
-    '## 问答长度',
+    `## ${t('report.qaHeading')}`,
     '',
-    `- 我平均每条提问：${formatNumber(Math.round(averageQuestion))} 字`,
-    `- DeepSeek 平均每条回复：${formatNumber(Math.round(averageAnswer))} 字（正文，不含推理）`,
-    `- 回复 / 提问：${responseRatio > 0 ? `${formatDecimal(responseRatio)} 倍` : '—'}`,
+    t('report.avgQuestion', { count: Math.round(averageQuestion) }),
+    t('report.avgAnswer', { count: Math.round(averageAnswer) }),
+    t('report.responseRatio', {
+      ratio:
+        responseRatio > 0
+          ? t('report.times', { ratio: formatDecimal(responseRatio) })
+          : '—',
+    }),
     '',
-    '## 会话长度分布',
+    `## ${t('report.lengthDistribution')}`,
     '',
-    '| 长度 | 会话数 |',
+    `| ${t('report.length')} | ${t('report.conversationCount')} |`,
     '| --- | --- |',
     ...report.lengthDistribution.map(
       (bucket) => `| ${bucket.label} | ${formatNumber(bucket.count)} |`,
     ),
     '',
-    '## 模型分布',
+    `## ${t('report.modelDistribution')}`,
     '',
-    '| 模型 | 会话 | 消息 | 字数 |',
+    `| ${t('report.model')} | ${t('report.conversationColumn')} | ${t('report.messagesColumn')} | ${t('report.characters')} |`,
     '| --- | --- | --- | --- |',
     ...report.models.map(
       (model) =>
         `| ${escapeMarkdown(model.model)} | ${formatNumber(model.conversations)} | ${formatNumber(model.messages)} | ${formatNumber(model.characters)} |`,
     ),
     '',
-    '## 内容构成',
+    `## ${t('report.contentBreakdown')}`,
     '',
-    `- 带推理回复：${formatNumber(content.reasoningMessages)} / ${formatNumber(content.assistantMessages)}（${formatPercent(content.reasoningMessages, content.assistantMessages)}）`,
-    `- 推理字数：${formatNumber(content.reasoningCharacters)}`,
-    `- 引用来源：${formatNumber(content.references)}（${formatNumber(content.referenceMessages)} 条消息）`,
-    `- 附件：${formatNumber(content.attachments)}（${formatNumber(content.attachmentMessages)} 条消息）`,
+    t('report.reasoningRepliesLine', {
+      with: content.reasoningMessages,
+      total: content.assistantMessages,
+      percent: formatPercent(content.reasoningMessages, content.assistantMessages),
+    }),
+    t('report.reasoningCharactersLine', { count: content.reasoningCharacters }),
+    t('report.referencesLine', {
+      citations: content.references,
+      count: content.referenceMessages,
+    }),
+    t('report.attachmentsLine', {
+      attachments: content.attachments,
+      count: content.attachmentMessages,
+    }),
     '',
-    '## 会话排行',
+    `## ${t('report.rankings')}`,
     '',
   ]
 
   const rankings: Array<[string, (row: ConversationRank) => number, (row: ConversationRank) => string]> = [
-    ['消息最多', (row) => row.messages, (row) => `${formatNumber(row.messages)} 条`],
-    ['字数最多', (row) => row.characters, (row) => `${formatNumber(row.characters)} 字`],
-    ['持续时间最长', (row) => row.durationMs, (row) => formatDuration(row.durationMs)],
+    [
+      t('report.rankMostMessages'),
+      (row) => row.messages,
+      (row) => t('unit.messages', { count: row.messages }),
+    ],
+    [
+      t('report.rankMostCharacters'),
+      (row) => row.characters,
+      (row) => t('unit.characters', { count: row.characters }),
+    ],
+    [t('report.rankLongestDuration'), (row) => row.durationMs, (row) => formatDuration(row.durationMs)],
   ]
   for (const [heading, value, display] of rankings) {
-    lines.push(`### ${heading}`, '', '| # | 会话 | 数值 |', '| --- | --- | --- |')
+    lines.push(
+      `### ${heading}`,
+      '',
+      `| # | ${t('report.conversationColumn')} | ${t('report.value')} |`,
+      '| --- | --- | --- |',
+    )
     topBy(report.conversations, value).forEach((row, index) => {
       lines.push(
-        `| ${index + 1} | ${escapeMarkdown(row.title || '未命名会话')} | ${display(row)} |`,
+        `| ${index + 1} | ${escapeMarkdown(conversationTitle(row.title, untitled))} | ${display(row)} |`,
       )
     })
     lines.push('')
   }
 
-  lines.push('## 会话明细', '', '| 会话 | 模型 | 时间 | 消息 | 字数 | 持续 |', '| --- | --- | --- | --- | --- | --- |')
+  lines.push(
+    `## ${t('report.details')}`,
+    '',
+    `| ${t('report.conversationColumn')} | ${t('report.model')} | ${t('report.time')} | ${t('report.messagesColumn')} | ${t('report.characters')} | ${t('report.duration')} |`,
+    '| --- | --- | --- | --- | --- | --- |',
+  )
   for (const row of report.conversations) {
     lines.push(
-      `| ${escapeMarkdown(row.title || '未命名会话')} | ${escapeMarkdown(row.model)} | ${formatDay(row.startedAt)} | ${formatNumber(row.messages)} | ${formatNumber(row.characters)} | ${formatDuration(row.durationMs)} |`,
+      `| ${escapeMarkdown(conversationTitle(row.title, untitled))} | ${escapeMarkdown(row.model)} | ${formatDay(row.startedAt)} | ${formatNumber(row.messages)} | ${formatNumber(row.characters)} | ${formatDuration(row.durationMs)} |`,
     )
   }
 
@@ -416,31 +516,36 @@ export function buildCsvReport(
   const averageAnswer = average(content.assistantCharacters, content.assistantMessages)
   const responseRatio = averageQuestion > 0 ? averageAnswer / averageQuestion : 0
   const rows: Array<Array<string | number>> = [
-    ['报告生成时间', formatTimestamp(generatedAt)],
-    ['会话数', stats.conversationCount],
-    ['消息数', stats.messageCount],
-    ['我的消息数', stats.userMessageCount],
-    ['DeepSeek 消息数', stats.assistantMessageCount],
-    ['字数（含推理）', stats.characterCount],
-    ['时间跨度（天）', stats.spanDays],
-    ['最早会话', formatDay(stats.earliest)],
-    ['最晚会话', formatDay(stats.latest)],
-    ['平均每会话消息数', formatDecimal(stats.averageMessagesPerConversation)],
-    ['日均消息数', formatDecimal(stats.messagesPerDay)],
-    ['平均每条字数', formatDecimal(stats.averageCharactersPerMessage)],
-    ['活跃天数', report.activity.activeDays],
-    ['最长连续天数', report.activity.longestStreak],
-    ['最近连续天数', report.activity.recentStreak],
-    ['我平均每条提问字数', Math.round(averageQuestion)],
-    ['DeepSeek 平均每条回复字数', Math.round(averageAnswer)],
-    ['回复/提问比', responseRatio > 0 ? formatDecimal(responseRatio) : '—'],
+    [t('report.csv.generatedAt'), formatTimestamp(generatedAt)],
+    [t('report.csv.conversationCount'), stats.conversationCount],
+    [t('report.csv.messageCount'), stats.messageCount],
+    [t('report.csv.userMessages'), stats.userMessageCount],
+    [t('report.csv.assistantMessages'), stats.assistantMessageCount],
+    [t('report.csv.charactersWithReasoning'), stats.characterCount],
+    [t('report.csv.timeSpanDays'), stats.spanDays],
+    [t('report.csv.earliest'), formatDay(stats.earliest)],
+    [t('report.csv.latest'), formatDay(stats.latest)],
+    [t('report.csv.avgMessagesPerConversation'), formatDecimal(stats.averageMessagesPerConversation)],
+    [t('report.csv.messagesPerDay'), formatDecimal(stats.messagesPerDay)],
+    [t('report.csv.avgCharactersPerMessage'), formatDecimal(stats.averageCharactersPerMessage)],
+    [t('report.csv.activeDays'), report.activity.activeDays],
+    [t('report.csv.longestStreakDays'), report.activity.longestStreak],
+    [t('report.csv.recentStreakDays'), report.activity.recentStreak],
+    [t('report.csv.avgQuestionCharacters'), Math.round(averageQuestion)],
+    [t('report.csv.avgAnswerCharacters'), Math.round(averageAnswer)],
+    [t('report.csv.responseRatio'), responseRatio > 0 ? formatDecimal(responseRatio) : '—'],
     [],
-    ['会话长度分布'],
-    ['长度', '会话数'],
+    [t('report.csv.lengthDistribution')],
+    [t('report.csv.length'), t('report.csv.conversationCountColumn')],
     ...report.lengthDistribution.map((bucket) => [bucket.label, bucket.count]),
     [],
-    ['模型分布'],
-    ['模型', '会话数', '消息数', '字数'],
+    [t('report.csv.modelDistribution')],
+    [
+      t('report.csv.model'),
+      t('report.csv.conversationCountColumn'),
+      t('report.csv.messageCountColumn'),
+      t('report.csv.charactersColumn'),
+    ],
     ...report.models.map((model) => [
       model.model,
       model.conversations,
@@ -448,22 +553,29 @@ export function buildCsvReport(
       model.characters,
     ]),
     [],
-    ['内容构成'],
-    ['项目', '数值'],
-    ['带推理回复', `${content.reasoningMessages} / ${content.assistantMessages}`],
-    ['推理字数', content.reasoningCharacters],
-    ['引用来源', content.references],
-    ['引用消息数', content.referenceMessages],
-    ['附件', content.attachments],
-    ['附件消息数', content.attachmentMessages],
+    [t('report.csv.contentBreakdown')],
+    [t('report.csv.item'), t('report.value')],
+    [t('report.csv.reasoningReplies'), `${content.reasoningMessages} / ${content.assistantMessages}`],
+    [t('report.csv.reasoningCharacters'), content.reasoningCharacters],
+    [t('report.csv.references'), content.references],
+    [t('report.csv.referenceMessages'), content.referenceMessages],
+    [t('report.csv.attachments'), content.attachments],
+    [t('report.csv.attachmentMessages'), content.attachmentMessages],
     [],
-    ['会话明细'],
-    ['会话', '模型', '开始时间', '消息数', '字数', '持续时间'],
+    [t('report.csv.details')],
+    [
+      t('report.conversationColumn'),
+      t('report.csv.model'),
+      t('report.csv.startTime'),
+      t('report.csv.messageCountColumn'),
+      t('report.csv.charactersColumn'),
+      t('report.csv.duration'),
+    ],
   ]
 
   for (const row of report.conversations) {
     rows.push([
-      row.title || '未命名会话',
+      conversationTitle(row.title, t('conversation.untitled')),
       row.model,
       formatDay(row.startedAt),
       row.messages,

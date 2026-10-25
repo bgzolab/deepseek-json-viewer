@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { conversationTitle } from '../lib/conversationTitle'
+import { t } from '../lib/i18n'
 import { computeChatStats } from '../lib/stats'
 import {
   buildCsvReport,
@@ -68,8 +70,8 @@ function exportCsv(): void {
   <ModalShell
     :open="open"
     width="lg"
-    title="数据统计"
-    description="仅统计当前浏览器中保存的本地会话。"
+    :title="t('stats.title')"
+    :description="t('stats.description')"
     @close="emit('close')"
   >
     <template #icon>
@@ -79,25 +81,31 @@ function exportCsv(): void {
     <div v-if="stats.conversationCount > 0" class="stats">
       <div class="stats-grid">
         <div class="stat-cell">
-          <span class="stat-label">会话</span>
+          <span class="stat-label">{{ t('stats.conversations') }}</span>
           <strong>{{ formatNumber(stats.conversationCount) }}</strong>
         </div>
         <div class="stat-cell">
-          <span class="stat-label">消息</span>
+          <span class="stat-label">{{ t('stats.messages') }}</span>
           <strong>{{ formatNumber(stats.messageCount) }}</strong>
           <span class="stat-foot">
-            用户 {{ formatNumber(stats.userMessageCount) }} · 助手
-            {{ formatNumber(stats.assistantMessageCount) }}
+            {{
+              t('stats.userAssistant', {
+                user: stats.userMessageCount,
+                assistant: stats.assistantMessageCount,
+              })
+            }}
           </span>
         </div>
         <div class="stat-cell">
-          <span class="stat-label">字数</span>
+          <span class="stat-label">{{ t('stats.characters') }}</span>
           <strong>{{ formatNumber(stats.characterCount) }}</strong>
-          <span class="stat-foot">含推理内容，不含空白</span>
+          <span class="stat-foot">{{ t('stats.charactersFoot') }}</span>
         </div>
         <div class="stat-cell">
-          <span class="stat-label">时间跨度</span>
-          <strong>{{ stats.spanDays > 0 ? `${formatNumber(stats.spanDays)} 天` : '—' }}</strong>
+          <span class="stat-label">{{ t('stats.timeSpan') }}</span>
+          <strong>
+            {{ stats.spanDays > 0 ? t('unit.days', { count: stats.spanDays }) : '—' }}
+          </strong>
           <span v-if="stats.earliest !== null && stats.latest !== null" class="stat-foot">
             {{ formatDay(stats.earliest) }} – {{ formatDay(stats.latest) }}
           </span>
@@ -106,35 +114,41 @@ function exportCsv(): void {
       </div>
 
       <p class="stats-summary">
-        平均每会话 {{ formatDecimal(stats.averageMessagesPerConversation) }} 条消息 ·
-        日均 {{ formatDecimal(stats.messagesPerDay) }} 条 ·
-        平均每条 {{ formatDecimal(stats.averageCharactersPerMessage) }} 字
+        {{
+          t('stats.summary', {
+            avgMessages: formatDecimal(stats.averageMessagesPerConversation),
+            perDay: formatDecimal(stats.messagesPerDay),
+            avgChars: formatDecimal(stats.averageCharactersPerMessage),
+          })
+        }}
       </p>
 
       <StatsTrendChart :conversations="store.state.conversations" />
 
       <StatsInsights :report="report" :stats="stats" @select="emit('select', $event)" />
 
-      <section class="conversation-section" aria-label="会话明细">
+      <section class="conversation-section" :aria-label="t('stats.details')">
         <div class="section-heading">
-          <h3>会话明细</h3>
-          <span>按时间从早到晚</span>
+          <h3>{{ t('stats.details') }}</h3>
+          <span>{{ t('stats.detailsOrder') }}</span>
         </div>
 
         <div class="table-wrap">
           <table class="stats-table">
             <thead>
               <tr>
-                <th scope="col">会话</th>
-                <th scope="col">时间</th>
-                <th scope="col" class="is-number">消息</th>
-                <th scope="col" class="is-number">字数</th>
+                <th scope="col">{{ t('stats.columnConversation') }}</th>
+                <th scope="col">{{ t('stats.columnTime') }}</th>
+                <th scope="col" class="is-number">{{ t('stats.columnMessages') }}</th>
+                <th scope="col" class="is-number">{{ t('stats.columnCharacters') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="row in stats.conversations" :key="row.id">
                 <td class="is-title">
-                  <span :title="row.title || '未命名会话'">{{ row.title || '未命名会话' }}</span>
+                  <span :title="conversationTitle(row.title, t('conversation.untitled'))">
+                    {{ conversationTitle(row.title, t('conversation.untitled')) }}
+                  </span>
                 </td>
                 <td class="is-date">{{ formatDay(row.startedAt) }}</td>
                 <td class="is-number">{{ formatNumber(row.messageCount) }}</td>
@@ -148,19 +162,19 @@ function exportCsv(): void {
 
     <div v-else class="stats-empty">
       <span class="stats-empty-icon"><AppIcon name="chart" :size="22" /></span>
-      <strong>还没有可统计的会话</strong>
-      <p>导入 DeepSeek 导出的 JSON 后，这里会汇总会话、消息和字数。</p>
+      <strong>{{ t('stats.emptyTitle') }}</strong>
+      <p>{{ t('stats.emptyBody') }}</p>
     </div>
 
     <template #footer>
-      <span class="export-note">导出在本地生成，不会上传数据</span>
+      <span class="export-note">{{ t('stats.exportNote') }}</span>
       <button
         type="button"
         class="btn btn-ghost"
         :disabled="stats.conversationCount === 0"
         @click="exportMarkdown"
       >
-        导出 Markdown
+        {{ t('stats.exportMarkdown') }}
       </button>
       <button
         type="button"
@@ -168,9 +182,11 @@ function exportCsv(): void {
         :disabled="stats.conversationCount === 0"
         @click="exportCsv"
       >
-        导出 CSV
+        {{ t('stats.exportCsv') }}
       </button>
-      <button type="button" class="btn btn-primary" @click="emit('close')">关闭</button>
+      <button type="button" class="btn btn-primary" @click="emit('close')">
+        {{ t('common.close') }}
+      </button>
     </template>
   </ModalShell>
 </template>

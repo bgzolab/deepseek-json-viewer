@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ImportFileOutcome, ImportReport } from '../types/import'
+import { t } from '../lib/i18n'
 import { formatFileSize } from '../lib/time'
 import AppIcon from './AppIcon.vue'
 import ModalShell from './ModalShell.vue'
@@ -24,38 +25,52 @@ const tone = computed<'success' | 'warning' | 'danger'>(() => {
 })
 
 const title = computed(() => {
-  if (!props.report) return '导入结果'
-  if (props.report.fatalError) return '导入中断'
+  if (!props.report) return t('importReport.title')
+  if (props.report.fatalError) return t('importReport.interrupted')
 
   const totals = props.report.totals
   if (totals.scannedFiles > 0 && totals.failedFiles === totals.scannedFiles) {
-    return '导入失败'
+    return t('importReport.failed')
   }
-  if (totals.failedFiles > 0) return '导入完成，部分文件失败'
-  if (totals.newConversations === 0) return '没有新增会话'
-  return '导入完成'
+  if (totals.failedFiles > 0) return t('importReport.partial')
+  if (totals.newConversations === 0) return t('importReport.noNew')
+  return t('importReport.complete')
 })
 
 const description = computed(() => {
   if (!props.report) return ''
-  if (props.report.fatalError) return '导入过程中出现错误，已尽量保留此前写入的数据。'
+  if (props.report.fatalError) return t('importReport.interruptedBody')
 
   const totals = props.report.totals
   if (totals.scannedFiles > 0 && totals.failedFiles === totals.scannedFiles) {
-    return '没有文件成功导入，请查看下方失败原因。'
+    return t('importReport.allFailedBody')
   }
   if (totals.newConversations === 0 && totals.mergedDuplicates === 0) {
-    return '这些文件里的会话已经在本地缓存中，没有重复写入。'
+    return t('importReport.allDuplicatesBody')
   }
-  return `已解析 ${totals.parsedConversations} 个会话，全部数据都保存在当前浏览器。`
+  return t('importReport.parsedBody', {
+    count: totals.parsedConversations,
+    conversations: totals.parsedConversations,
+  })
 })
 
 function fileSummary(file: ImportFileOutcome): string {
-  if (file.status === 'error') return '解析失败'
-  const parts = [`${file.conversationCount} 个会话`]
-  if (file.newConversations > 0) parts.push(`新增 ${file.newConversations}`)
-  if (file.mergedDuplicates > 0) parts.push(`合并 ${file.mergedDuplicates}`)
-  if (file.skippedDuplicates > 0) parts.push(`跳过 ${file.skippedDuplicates}`)
+  if (file.status === 'error') return t('importReport.fileParseFailed')
+  const parts = [
+    t('importReport.fileSummary', {
+      count: file.conversationCount,
+      conversations: file.conversationCount,
+    }),
+  ]
+  if (file.newConversations > 0) {
+    parts.push(t('importReport.fileNew', { count: file.newConversations }))
+  }
+  if (file.mergedDuplicates > 0) {
+    parts.push(t('importReport.fileMerged', { count: file.mergedDuplicates }))
+  }
+  if (file.skippedDuplicates > 0) {
+    parts.push(t('importReport.fileSkipped', { count: file.skippedDuplicates }))
+  }
   return parts.join(' · ')
 }
 </script>
@@ -64,7 +79,7 @@ function fileSummary(file: ImportFileOutcome): string {
   <ModalShell
     :open="open"
     width="lg"
-    title="导入结果"
+    :title="t('importReport.title')"
     @close="emit('close')"
   >
     <template #icon>
@@ -84,35 +99,35 @@ function fileSummary(file: ImportFileOutcome): string {
 
       <div class="stat-grid">
         <div class="stat-card">
-          <span class="stat-label">扫描文件</span>
+          <span class="stat-label">{{ t('importReport.scannedFiles') }}</span>
           <strong>{{ totals.scannedFiles }}</strong>
         </div>
         <div class="stat-card">
-          <span class="stat-label">识别会话</span>
+          <span class="stat-label">{{ t('importReport.parsedConversations') }}</span>
           <strong>{{ totals.parsedConversations }}</strong>
         </div>
         <div class="stat-card is-accent">
-          <span class="stat-label">新增会话</span>
+          <span class="stat-label">{{ t('importReport.newConversations') }}</span>
           <strong>{{ totals.newConversations }}</strong>
         </div>
         <div class="stat-card">
-          <span class="stat-label">跳过重复</span>
+          <span class="stat-label">{{ t('importReport.skippedDuplicates') }}</span>
           <strong>{{ totals.skippedDuplicates }}</strong>
         </div>
         <div class="stat-card">
-          <span class="stat-label">合并重复</span>
+          <span class="stat-label">{{ t('importReport.mergedDuplicates') }}</span>
           <strong>{{ totals.mergedDuplicates }}</strong>
         </div>
         <div class="stat-card">
-          <span class="stat-label">新增消息</span>
+          <span class="stat-label">{{ t('importReport.newMessages') }}</span>
           <strong>{{ totals.newMessages }}</strong>
         </div>
         <div class="stat-card" :class="{ 'is-danger': totals.failedFiles > 0 }">
-          <span class="stat-label">失败文件</span>
+          <span class="stat-label">{{ t('importReport.failedFiles') }}</span>
           <strong>{{ totals.failedFiles }}</strong>
         </div>
         <div class="stat-card">
-          <span class="stat-label">警告</span>
+          <span class="stat-label">{{ t('importReport.warnings') }}</span>
           <strong>{{ totals.warnings }}</strong>
         </div>
       </div>
@@ -124,8 +139,8 @@ function fileSummary(file: ImportFileOutcome): string {
 
       <div class="file-section">
         <div class="section-heading">
-          <h4>文件明细</h4>
-          <span>{{ report.files.length }} 个文件</span>
+          <h4>{{ t('importReport.fileDetails') }}</h4>
+          <span>{{ t('importReport.fileCount', { count: report.files.length }) }}</span>
         </div>
         <div class="file-list">
           <article
@@ -149,14 +164,20 @@ function fileSummary(file: ImportFileOutcome): string {
                   :name="file.status === 'error' ? 'alert' : file.status === 'warning' ? 'info' : 'check'"
                   :size="14"
                 />
-                {{ file.status === 'error' ? '失败' : file.status === 'warning' ? '有警告' : '成功' }}
+                {{
+                  file.status === 'error'
+                    ? t('importReport.statusError')
+                    : file.status === 'warning'
+                      ? t('importReport.statusWarning')
+                      : t('importReport.statusSuccess')
+                }}
               </span>
             </div>
 
             <p v-if="file.error" class="file-error">{{ file.error }}</p>
 
             <details v-if="file.warnings.length" class="file-warnings">
-              <summary>{{ file.warnings.length }} 条提示</summary>
+              <summary>{{ t('importReport.warningCount', { count: file.warnings.length }) }}</summary>
               <ul>
                 <li v-for="(warning, index) in file.warnings" :key="index">{{ warning }}</li>
               </ul>
@@ -169,7 +190,7 @@ function fileSummary(file: ImportFileOutcome): string {
     <template #footer>
       <button type="button" class="btn btn-primary" @click="emit('close')">
         <AppIcon name="message" :size="15" />
-        开始浏览
+        {{ t('importReport.startBrowsing') }}
       </button>
     </template>
   </ModalShell>

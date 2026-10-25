@@ -24,6 +24,7 @@ A local-first, browser-only viewer for DeepSeek chat exports. Import one or more
 - Footer menu with a local statistics dashboard (activity heatmap, rankings, model/content breakdowns, Markdown/CSV export), an about page, and links
 - DeepSeek-style layout with Markdown, tables, reasoning, citations, and copyable code blocks
 - Full-text search across titles, messages, and reasoning, with match navigation
+- Chinese and English interface with a language selector in the footer menu; adding another language only needs a dictionary under `src/lib/i18n/locales/` and a locale option
 - Responsive sidebar drawer for mobile; assistant avatar and welcome artwork are bundled locally
 - Offline app-shell caching in production builds
 
@@ -57,7 +58,7 @@ npm run typecheck
 - All parsing, deduplication, search, and storage happen in the browser.
 - Chat content is never uploaded. There is no backend, account, or synchronization.
 - Conversations are stored in IndexedDB. Clearing site data removes them.
-- Only small UI state (selected conversation, sidebar state and theme) is stored in localStorage.
+- Only small UI state (selected conversation, sidebar state, theme and language) is stored in localStorage.
 - Production builds cache the app shell with a service worker for offline use; development does not register it.
 - No external CDN, fonts, images, or third-party scripts are used at runtime.
 

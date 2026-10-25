@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { ImportReport } from './types/import'
+import { conversationTitle } from './lib/conversationTitle'
+import { t } from './lib/i18n'
 import { useChatStore } from './stores/chatStore'
 import AppIcon from './components/AppIcon.vue'
 import AppSidebar from './components/AppSidebar.vue'
@@ -38,27 +40,31 @@ const confirmState = reactive({
 })
 
 const confirmTitle = computed(() =>
-  confirmState.action === 'clear' ? '清空本地数据？' : '删除这个会话？',
+  confirmState.action === 'clear' ? t('confirm.clearTitle') : t('confirm.deleteTitle'),
 )
 
 const confirmMessage = computed(() => {
   if (confirmState.action === 'clear') {
-    return `将删除当前浏览器中保存的 ${store.state.conversations.length} 个会话和 ${store.totalMessages.value} 条消息。`
+    const conversations = store.state.conversations.length
+    return t('confirm.clearMessage', {
+      conversations: t('unit.conversationCount', { count: conversations }),
+      messages: t('unit.messageCount', { count: store.totalMessages.value }),
+    })
   }
   const conversation = store.conversationMap.value.get(confirmState.conversationId)
   return conversation
-    ? `“${conversation.title || '未命名会话'}” 将从本地缓存中移除。`
-    : '该会话将从本地缓存中移除。'
+    ? t('confirm.deleteMessage', {
+        title: conversationTitle(conversation.title, t('conversation.untitled')),
+      })
+    : t('confirm.deleteMessageFallback')
 })
 
 const confirmDetail = computed(() =>
-  confirmState.action === 'clear'
-    ? '此操作不可撤销，但不会影响你原始导出的 JSON 文件。'
-    : '本次操作不会影响原始 JSON 文件；之后仍可重新导入。',
+  confirmState.action === 'clear' ? t('confirm.clearDetail') : t('confirm.deleteDetail'),
 )
 
 const confirmLabel = computed(() =>
-  confirmState.action === 'clear' ? '清空本地数据' : '删除会话',
+  confirmState.action === 'clear' ? t('confirm.clearLabel') : t('confirm.deleteLabel'),
 )
 
 const databaseError = computed(
@@ -102,11 +108,11 @@ function hasOpenDialog(): boolean {
 async function runImport(files: File[]): Promise<void> {
   if (files.length === 0) return
   if (store.state.importing) {
-    showNotice('导入正在进行，请稍候。', 'info')
+    showNotice(t('app.importInProgress'), 'info')
     return
   }
   if (reportOpen.value || confirmState.open) {
-    showNotice('请先关闭当前对话框。', 'info')
+    showNotice(t('app.closeDialogFirst'), 'info')
     return
   }
 
@@ -211,17 +217,19 @@ async function executeConfirm(): Promise<void> {
   try {
     if (action === 'clear') {
       await store.clearAllData()
-      showNotice('本地数据已清空。', 'success')
+      showNotice(t('app.clearSuccess'), 'success')
     } else {
       await store.deleteConversation(conversationId)
-      showNotice('会话已删除。', 'success')
+      showNotice(t('app.deleteSuccess'), 'success')
     }
     confirmState.open = false
     confirmState.action = null
     confirmState.conversationId = ''
   } catch (error) {
     showNotice(
-      error instanceof Error ? `操作失败：${error.message}` : '操作失败，请稍后重试。',
+      error instanceof Error
+        ? t('app.operationFailed', { error: error.message })
+        : t('app.operationFailedRetry'),
       'error',
     )
   } finally {
@@ -246,7 +254,7 @@ onMounted(async () => {
 
   await store.initializeStore()
   if (store.state.loadError) {
-    showNotice(`本地数据库不可用：${store.state.loadError}`, 'error')
+    showNotice(t('app.databaseUnavailable', { error: store.state.loadError }), 'error')
   }
 })
 
@@ -290,11 +298,11 @@ onBeforeUnmount(() => {
     <main class="app-main" :inert="isMobileViewport && store.state.mobileSidebarOpen">
       <div v-if="databaseError" class="database-banner">
         <AppIcon name="alert" :size="15" />
-        <span>本地数据库不可用，导入记录可能无法持久保存：{{ store.state.loadError }}</span>
+        <span>{{ t('app.databaseBanner', { error: store.state.loadError }) }}</span>
         <button
           type="button"
           class="icon-button is-small"
-          aria-label="关闭提示"
+          :aria-label="t('app.dismiss')"
           @click="dismissedDatabaseError = true"
         >
           <AppIcon name="x" :size="13" />
@@ -304,7 +312,7 @@ onBeforeUnmount(() => {
       <div v-if="store.state.status === 'loading'" class="app-loading">
         <span class="loading-orb"><AppIcon name="database" :size="21" /></span>
         <span class="spinner" />
-        <span>正在读取本地缓存…</span>
+        <span>{{ t('app.loading') }}</span>
       </div>
       <ChatView
         v-else
@@ -358,8 +366,8 @@ onBeforeUnmount(() => {
       <div v-if="isDragging" class="drop-overlay">
         <div class="drop-overlay-card">
           <div class="drop-overlay-icon"><AppIcon name="upload" :size="25" /></div>
-          <strong>松开即可导入</strong>
-          <span>支持多个 JSON 文件 · 重复会话会自动合并</span>
+          <strong>{{ t('app.dropTitle') }}</strong>
+          <span>{{ t('app.dropHint') }}</span>
         </div>
       </div>
     </Transition>

@@ -1,7 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import type { Conversation } from '../types/chat'
+import { setLocale } from './i18n'
 import { computeChatStats } from './stats'
-import { buildCsvReport, buildMarkdownReport, computeChatReport } from './report'
+import {
+  buildCsvReport,
+  buildMarkdownReport,
+  computeChatReport,
+  formatDecimal,
+  formatDuration,
+} from './report'
 
 function conversation(overrides: Partial<Conversation> = {}): Conversation {
   return {
@@ -66,6 +73,8 @@ const conversations: Conversation[] = [
 ]
 
 describe('computeChatReport', () => {
+  afterEach(() => setLocale('zh-CN'))
+
   it('aggregates activity, content, models, and conversation sizes', () => {
     const report = computeChatReport(conversations)
 
@@ -111,6 +120,35 @@ describe('computeChatReport', () => {
     expect(markdown).toContain('A, "B" \\| C')
     expect(csv).toContain('会话,模型,开始时间,消息数,字数,持续时间')
     expect(csv).toContain('"A, ""B"" | C"')
+  })
+
+  it('exports an English report without unresolved placeholders', () => {
+    setLocale('en')
+    const stats = computeChatStats(conversations)
+    const report = computeChatReport(conversations)
+    const markdown = buildMarkdownReport(stats, report, Date.now())
+    const csv = buildCsvReport(stats, report, Date.now())
+
+    expect(markdown).toContain('# DeepSeek Chat Statistics')
+    expect(markdown).toContain('| Conversations | 2 |')
+    expect(markdown).toContain('| Messages | 5 (me 2 / DeepSeek 3) |')
+    expect(markdown).toContain('Jan 2, 2026')
+    expect(markdown).not.toMatch(/\{\w+\}/)
+    expect(csv).toContain('Conversation,Model,Started at,Messages,Characters,Duration')
+  })
+
+  it('rolls near-day durations into days and pluralizes them', () => {
+    setLocale('en')
+    expect(formatDuration(23 * 3_600_000 + 57 * 60_000)).toBe('1 day')
+    expect(formatDuration(59 * 60_000 + 50_000)).toBe('1 h')
+    expect(formatDuration(30 * 60_000)).toBe('30 min')
+  })
+
+  it('keeps one decimal until values reach 1,000', () => {
+    setLocale('en')
+    expect(formatDecimal(100.4)).toBe('100.4')
+    expect(formatDecimal(999.9)).toBe('999.9')
+    expect(formatDecimal(1_234.5)).toBe('1,235')
   })
 
   it('escapes backslashes, pipes, and carriage returns in markdown tables', () => {

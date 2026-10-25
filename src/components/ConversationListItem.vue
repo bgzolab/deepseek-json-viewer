@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { StoredConversation } from '../types/chat'
+import { conversationTitle } from '../lib/conversationTitle'
+import { t } from '../lib/i18n'
 import { compactConversationDate } from '../lib/time'
 import AppIcon from './AppIcon.vue'
 import HighlightText from './HighlightText.vue'
@@ -18,16 +20,20 @@ const emit = defineEmits<{
   delete: [id: string]
 }>()
 
-const title = computed(() => props.conversation.title || '未命名会话')
+const title = computed(() =>
+  conversationTitle(props.conversation.title, t('conversation.untitled')),
+)
 
 const dateLabel = computed(() => compactConversationDate(props.conversation))
 
 const metaLabel = computed(() => {
-  if (props.matchCount > 0) return `${props.matchCount} 处`
-  if ((props.titleMatchCount ?? 0) > 0) return '标题匹配'
+  if (props.matchCount > 0) {
+    return t('conversation.matches', { count: props.matchCount })
+  }
+  if ((props.titleMatchCount ?? 0) > 0) return t('conversation.titleMatch')
   const parts: string[] = []
   if (dateLabel.value) parts.push(dateLabel.value)
-  parts.push(`${props.conversation.messages.length} 条`)
+  parts.push(t('conversation.messageCount', { count: props.conversation.messages.length }))
   return parts.join(' · ')
 })
 
@@ -53,8 +59,8 @@ const hasMatch = computed(
     <button
       type="button"
       class="item-delete"
-      :aria-label="`删除会话：${title}`"
-      title="删除会话"
+      :aria-label="t('conversation.deleteAria', { title })"
+      :title="t('conversation.delete')"
       @click.stop="emit('delete', conversation.id)"
     >
       <AppIcon name="trash" :size="15" />

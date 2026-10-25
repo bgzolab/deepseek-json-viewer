@@ -1,4 +1,5 @@
 import type { ChatMessage, Conversation, StoredConversation } from '../types/chat'
+import { UNTITLED_CONVERSATION } from './conversationTitle'
 import { fingerprintConversation, fingerprintMessage } from './hash'
 import { toTime } from './time'
 
@@ -184,7 +185,8 @@ export function mergeConversations(
   const { messages, added } = mergeMessages(existing.messages, incoming.messages)
 
   const titleSource = preferIncoming ? incoming.title : existing.title
-  const title = titleSource.trim() || existing.title || incoming.title || '未命名会话'
+  const title =
+    titleSource.trim() || existing.title || incoming.title || UNTITLED_CONVERSATION
 
   const merged: StoredConversation = {
     ...existing,
