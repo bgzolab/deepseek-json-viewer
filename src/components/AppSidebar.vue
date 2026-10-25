@@ -317,19 +317,6 @@ onBeforeUnmount(() => {
               <AppIcon name="info" :size="16" />
               <span>关于</span>
             </button>
-            <a
-              class="footer-menu-item"
-              role="menuitem"
-              href="https://www.deepseek.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              @click="footerMenuOpen = false"
-            >
-              <AppIcon name="link" :size="16" />
-              <span class="footer-menu-grow">友情链接</span>
-              <span class="footer-menu-note">DeepSeek</span>
-              <AppIcon name="external" :size="13" />
-            </a>
             <div class="footer-menu-divider" role="separator" />
             <button
               type="button"
@@ -724,20 +711,6 @@ onBeforeUnmount(() => {
 }
 
 .footer-menu-item:disabled :deep(.app-icon) {
-  color: var(--text-caption);
-}
-
-.footer-menu-grow {
-  min-width: 0;
-  flex: 1;
-}
-
-.footer-menu-note {
-  color: var(--text-tertiary);
-  font-size: 11px;
-}
-
-.footer-menu-note + :deep(.app-icon) {
   color: var(--text-caption);
 }
 

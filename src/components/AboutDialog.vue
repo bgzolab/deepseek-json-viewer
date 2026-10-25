@@ -50,6 +50,14 @@ const repoUrl = 'https://github.com/bgzolab/deepseek-json-viewer'
           </span>
           <AppIcon name="external" :size="14" class="about-link-arrow" />
         </a>
+        <a href="https://www.deepseek.com" target="_blank" rel="noopener noreferrer">
+          <span class="about-link-icon"><AppIcon name="link" :size="16" /></span>
+          <span class="about-link-copy">
+            <span>友情链接</span>
+            <small>DeepSeek 官网</small>
+          </span>
+          <AppIcon name="external" :size="14" class="about-link-arrow" />
+        </a>
       </div>
 
       <div class="about-note">
