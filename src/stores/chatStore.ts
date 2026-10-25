@@ -54,7 +54,6 @@ const state = reactive({
     fileCount: 0,
     written: 0,
     total: 0,
-    message: '',
   } as ImportProgress,
 })
 
@@ -339,7 +338,6 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
     fileCount: files.length,
     written: 0,
     total: 0,
-    message: t('import.preparing'),
   })
 
   // Vue's reactive proxies cannot be written to IndexedDB. Keep the import working set plain.
@@ -369,11 +367,6 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
         phase: 'parsing',
         fileName: file.name,
         fileIndex: fileIndex + 1,
-        message: t('import.parsingFile', {
-          name: file.name,
-          index: fileIndex + 1,
-          total: files.length,
-        }),
       })
 
       let outcome: ImportFileOutcome
@@ -442,15 +435,10 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
         fileIndex: files.length,
         written: 0,
         total: changed.length,
-        message: t('import.saving'),
       })
       await putConversationsInBatches(changed, {
         onProgress: (written, total) => {
-          setProgress({
-            written,
-            total,
-            message: t('import.savingProgress', { written, total }),
-          })
+          setProgress({ written, total })
         },
       })
     }
@@ -474,7 +462,7 @@ export async function importFiles(files: File[]): Promise<ImportReport> {
     report.finishedAt = Date.now()
     report.totals = summarize(report.files)
     state.importing = false
-    setProgress({ active: false, phase: 'done', message: '' })
+    setProgress({ active: false, phase: 'done' })
   }
 
   return report

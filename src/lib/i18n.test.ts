@@ -68,5 +68,9 @@ describe('i18n', () => {
 
     setLocale('en')
     expect(stored.get('dsjv:locale')).toBe('en')
+
+    stored.delete('dsjv:locale')
+    setLocale('en')
+    expect(stored.get('dsjv:locale')).toBe('en')
   })
 })

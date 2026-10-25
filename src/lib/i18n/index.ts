@@ -43,14 +43,16 @@ export function applyLocale(): void {
 
 export function setLocale(value: string): void {
   const next = normalizeLocale(value)
-  if (!next || next === locale.value) return
-  locale.value = next
+  if (!next) return
+  if (next !== locale.value) {
+    locale.value = next
+    applyLocale()
+  }
   try {
     localStorage.setItem(LOCALE_KEY, next)
   } catch {
     // Storage may be unavailable; the selected language still applies this session.
   }
-  applyLocale()
 }
 
 export function initI18n(): void {

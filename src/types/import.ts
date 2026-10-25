@@ -42,5 +42,4 @@ export interface ImportProgress {
   fileCount: number
   written: number
   total: number
-  message: string
 }

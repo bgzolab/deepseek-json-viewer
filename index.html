@@ -25,8 +25,9 @@
         .querySelector('meta[name="theme-color"]')
         ?.setAttribute('content', dark ? '#151517' : '#f9fafb')
 
-      // Set the language before first paint. Keep the supported list in sync with
-      // src/lib/i18n/types.ts. Title/meta are localized after mount.
+      // Set the language before first paint. Keep the supported list and the
+      // English-prefix fallback in sync with src/lib/i18n/types.ts and resolveLocale.
+      // Title/meta are localized after mount.
       let storedLocale = null
       try {
         storedLocale = localStorage.getItem('dsjv:locale')
