@@ -142,6 +142,24 @@ function requestClearFromMenu(): void {
   emit('request-clear')
 }
 
+function onThemeOptionKeydown(event: KeyboardEvent, index: number): void {
+  const step =
+    event.key === 'ArrowRight' || event.key === 'ArrowDown'
+      ? 1
+      : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+        ? -1
+        : 0
+  if (step === 0) return
+  event.preventDefault()
+  const nextIndex = (index + step + themeOptions.length) % themeOptions.length
+  setThemePreference(themeOptions[nextIndex].value)
+  const buttons =
+    (event.currentTarget as HTMLElement).parentElement?.querySelectorAll<HTMLButtonElement>(
+      '.theme-option',
+    )
+  buttons?.[nextIndex]?.focus()
+}
+
 watch(
   () => store.state.query,
   (query) => {
@@ -313,14 +331,16 @@ onBeforeUnmount(() => {
               </div>
               <div class="theme-options" role="radiogroup" aria-label="主题">
                 <button
-                  v-for="option in themeOptions"
+                  v-for="(option, index) in themeOptions"
                   :key="option.value"
                   type="button"
                   class="theme-option"
                   :class="{ 'is-active': themePreference === option.value }"
                   role="radio"
                   :aria-checked="themePreference === option.value"
+                  :tabindex="themePreference === option.value ? 0 : -1"
                   @click="setThemePreference(option.value)"
+                  @keydown="onThemeOptionKeydown($event, index)"
                 >
                   {{ option.label }}
                 </button>

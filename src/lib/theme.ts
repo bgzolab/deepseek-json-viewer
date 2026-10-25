@@ -4,6 +4,11 @@ export type ThemePreference = 'auto' | 'light' | 'dark'
 export type ResolvedTheme = 'light' | 'dark'
 
 const THEME_KEY = 'dsjv:theme'
+// Keep in sync with the inline script in index.html and the surface colors in tokens.css.
+const THEME_COLORS: Record<ResolvedTheme, string> = {
+  light: '#f9fafb',
+  dark: '#151517',
+}
 
 export const themePreference = ref<ThemePreference>(readThemePreference())
 
@@ -40,7 +45,7 @@ export function applyTheme(preference: ThemePreference = themePreference.value):
   document.documentElement.dataset.theme = theme
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', theme === 'dark' ? '#151517' : '#f9fafb')
+    ?.setAttribute('content', THEME_COLORS[theme])
 }
 
 export function setThemePreference(preference: ThemePreference): void {
