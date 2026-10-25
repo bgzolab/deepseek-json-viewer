@@ -126,7 +126,14 @@ const chart = computed(() => {
     y: TOP + PLOT_HEIGHT - (PLOT_HEIGHT * index) / 4,
   }))
 
-  const labelInterval = Math.max(1, Math.ceil(rows.length / 7))
+  const minLabelSpacing =
+    timeline.value.granularity === 'week'
+      ? 64
+      : timeline.value.granularity === 'month'
+        ? 56
+        : 44
+  const maxLabels = Math.min(8, Math.max(2, Math.floor(plotWidth / minLabelSpacing)))
+  const labelInterval = Math.max(1, Math.ceil(rows.length / maxLabels))
   const xTicks = rows.flatMap((row, index) => {
     const isLast = index === rows.length - 1
     if (index !== 0 && !isLast && index % labelInterval !== 0) return []
