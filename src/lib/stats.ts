@@ -84,6 +84,7 @@ export function computeChatStats(conversations: readonly Conversation[]): ChatSt
       if (message.role === 'assistant') rowAssistantMessages += 1
       rowCharacters +=
         countCharacters(message.content) + countCharacters(message.reasoning)
+      if (message.role !== 'user' && message.role !== 'assistant') continue
       const messageTime = toTime(message.createdAt)
       if (isChatTimestamp(messageTime)) {
         firstMessageTime =

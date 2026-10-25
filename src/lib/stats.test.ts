@@ -77,6 +77,12 @@ describe('computeChatStats', () => {
         createdAt: '2026-01-01T00:00:00.000Z',
         messages: [
           {
+            id: 'm0',
+            role: 'system',
+            content: 'instructions',
+            createdAt: '2026-01-02T12:00:00.000Z',
+          },
+          {
             id: 'm1',
             role: 'user',
             content: 'hi',
@@ -89,6 +95,7 @@ describe('computeChatStats', () => {
     expect(stats.conversations[0]?.startedAt).toBe(
       Date.parse('2026-01-05T12:00:00.000Z'),
     )
+    expect(stats.earliest).toBe(Date.parse('2026-01-05T12:00:00.000Z'))
   })
 
   it('ignores extreme timestamps in the summary range', () => {
