@@ -25,6 +25,7 @@ const RIGHT = 10
 const TOP = 12
 const BOTTOM = 30
 const PLOT_HEIGHT = HEIGHT - TOP - BOTTOM
+const MIN_GROUP_WIDTH = 8
 
 const compactFormat = new Intl.NumberFormat('zh-CN', {
   notation: 'compact',
@@ -100,10 +101,12 @@ const chart = computed(() => {
       xTicks: [],
       barWidth: 0,
       totalBarWidth: 0,
+      width: chartWidth.value,
     }
   }
 
-  const plotWidth = chartWidth.value - LEFT - RIGHT
+  const width = Math.max(chartWidth.value, rows.length * MIN_GROUP_WIDTH)
+  const plotWidth = width - LEFT - RIGHT
   let maxValue = 4
   for (const row of rows) {
     maxValue = Math.max(
@@ -161,7 +164,7 @@ const chart = computed(() => {
     }
   })
 
-  return { rows, bars, yTicks, xTicks, barWidth, totalBarWidth }
+  return { rows, bars, yTicks, xTicks, barWidth, totalBarWidth, width }
 })
 
 onMounted(() => {
@@ -241,8 +244,8 @@ onBeforeUnmount(() => observer?.disconnect())
     <div v-if="chart.rows.length > 0" class="chart-scroll">
       <svg
         class="trend-chart"
-        :viewBox="`0 0 ${chartWidth} ${HEIGHT}`"
-        :width="chartWidth"
+        :viewBox="`0 0 ${chart.width} ${HEIGHT}`"
+        :width="chart.width"
         :height="HEIGHT"
         role="img"
         :aria-label="
@@ -253,7 +256,7 @@ onBeforeUnmount(() => observer?.disconnect())
       >
         <g class="grid">
           <template v-for="tick in chart.yTicks" :key="tick.value">
-            <line :x1="LEFT" :x2="chartWidth - RIGHT" :y1="tick.y" :y2="tick.y" />
+            <line :x1="LEFT" :x2="chart.width - RIGHT" :y1="tick.y" :y2="tick.y" />
             <text :x="LEFT - 7" :y="tick.y + 3" text-anchor="end">
               {{ formatAxis(tick.value) }}
             </text>
@@ -464,7 +467,6 @@ onBeforeUnmount(() => observer?.disconnect())
 
 .trend-chart {
   display: block;
-  max-width: 100%;
   overflow: visible;
 }
 

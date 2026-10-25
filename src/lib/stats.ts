@@ -41,7 +41,7 @@ export function countCharacters(text: string | undefined): number {
   return Array.from(text.replace(/\s/g, '')).length
 }
 
-function conversationStartedAt(conversation: Conversation): number {
+export function conversationStartedAt(conversation: Conversation): number {
   return toTime(conversation.createdAt) ?? effectiveConversationTime(conversation)
 }
 

@@ -1,6 +1,6 @@
 import type { Conversation } from '../types/chat'
 import type { ChatStats } from './stats'
-import { countCharacters, isChatTimestamp } from './stats'
+import { conversationStartedAt, countCharacters, isChatTimestamp } from './stats'
 import { effectiveConversationTime, toTime } from './time'
 
 const DAY_MS = 86_400_000
@@ -70,10 +70,6 @@ const LENGTH_BUCKETS = [
 function localDayStart(timestamp: number): number {
   const date = new Date(timestamp)
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
-}
-
-function conversationStart(conversation: Conversation): number {
-  return toTime(conversation.createdAt) ?? effectiveConversationTime(conversation)
 }
 
 export function formatDuration(milliseconds: number): string {
@@ -174,7 +170,7 @@ export function computeChatReport(conversations: readonly Conversation[]): ChatR
     modelEntry.characters += characters
     models.set(model, modelEntry)
 
-    const startTime = firstMessageTime ?? conversationStart(conversation)
+    const startTime = firstMessageTime ?? conversationStartedAt(conversation)
     const startedAt = isChatTimestamp(startTime) ? startTime : 0
     const activityTime = lastMessageTime ?? effectiveConversationTime(conversation)
     const lastActivity = isChatTimestamp(activityTime) ? activityTime : 0
@@ -394,6 +390,7 @@ export function buildCsvReport(
   const content = report.content
   const averageQuestion = average(content.userCharacters, content.userMessages)
   const averageAnswer = average(content.assistantCharacters, content.assistantMessages)
+  const responseRatio = averageQuestion > 0 ? averageAnswer / averageQuestion : 0
   const rows: Array<Array<string | number>> = [
     ['报告生成时间', formatTimestamp(generatedAt)],
     ['会话数', stats.conversationCount],
@@ -401,11 +398,18 @@ export function buildCsvReport(
     ['我的消息数', stats.userMessageCount],
     ['DeepSeek 消息数', stats.assistantMessageCount],
     ['字数（含推理）', stats.characterCount],
+    ['时间跨度（天）', stats.spanDays],
+    ['最早会话', formatDay(stats.earliest)],
+    ['最晚会话', formatDay(stats.latest)],
+    ['平均每会话消息数', formatDecimal(stats.averageMessagesPerConversation)],
+    ['日均消息数', formatDecimal(stats.messagesPerDay)],
+    ['平均每条字数', formatDecimal(stats.averageCharactersPerMessage)],
     ['活跃天数', report.activity.activeDays],
     ['最长连续天数', report.activity.longestStreak],
     ['最近连续天数', report.activity.recentStreak],
     ['我平均每条提问字数', Math.round(averageQuestion)],
     ['DeepSeek 平均每条回复字数', Math.round(averageAnswer)],
+    ['回复/提问比', responseRatio > 0 ? formatDecimal(responseRatio) : '—'],
     [],
     ['会话长度分布'],
     ['长度', '会话数'],
