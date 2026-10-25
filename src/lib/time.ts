@@ -1,5 +1,5 @@
 import type { Conversation, StoredConversation } from '../types/chat'
-import { locale, t, type Locale } from './i18n'
+import { getIntlCached, locale, t } from './i18n'
 import { toTime } from './timeCore'
 
 export { parseTimestamp, toTime } from './timeCore'
@@ -34,29 +34,33 @@ interface DateFormats {
   full: Intl.DateTimeFormat
 }
 
-let formatsLocale: Locale | null = null
-let formats: DateFormats
+function dateFormatter(
+  kind: string,
+  value: string,
+  options: Intl.DateTimeFormatOptions,
+): Intl.DateTimeFormat {
+  return getIntlCached(`date:${kind}:${value}`, () => new Intl.DateTimeFormat(value, options))
+}
 
 function getDateFormats(): DateFormats {
-  if (formatsLocale === locale.value) return formats
   const value = locale.value
-  formatsLocale = value
-  formats = {
-    time: new Intl.DateTimeFormat(value, {
+  return {
+    time: dateFormatter('time', value, {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
     }),
-    monthDay: new Intl.DateTimeFormat(value, {
+    monthDay: dateFormatter('monthDay', value, {
       month: 'numeric',
       day: 'numeric',
     }),
-    yearMonthDay: new Intl.DateTimeFormat(value, {
+    yearMonthDay: dateFormatter('yearMonthDay', value, {
       year: 'numeric',
       month: 'numeric',
       day: 'numeric',
     }),
-    full: new Intl.DateTimeFormat(
+    full: dateFormatter(
+      'full',
       value,
       value === 'en'
         ? {
@@ -77,7 +81,6 @@ function getDateFormats(): DateFormats {
           },
     ),
   }
-  return formats
 }
 
 function startOfDay(date: Date): number {

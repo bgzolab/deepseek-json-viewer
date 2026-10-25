@@ -16,25 +16,22 @@ const dictionaries: Record<Locale, Record<MessageKey, MessageEntry>> = {
   en,
 }
 
-const pluralRules = new Map<Locale, Intl.PluralRules>()
-const numberFormats = new Map<Locale, Intl.NumberFormat>()
+const intlCache = new Map<string, unknown>()
+
+export function getIntlCached<T>(key: string, factory: () => T): T {
+  const cached = intlCache.get(key)
+  if (cached !== undefined) return cached as T
+  const value = factory()
+  intlCache.set(key, value)
+  return value
+}
 
 function getPluralRules(value: Locale): Intl.PluralRules {
-  let rules = pluralRules.get(value)
-  if (!rules) {
-    rules = new Intl.PluralRules(value)
-    pluralRules.set(value, rules)
-  }
-  return rules
+  return getIntlCached(`plural:${value}`, () => new Intl.PluralRules(value))
 }
 
 function getNumberFormat(value: Locale): Intl.NumberFormat {
-  let format = numberFormats.get(value)
-  if (!format) {
-    format = new Intl.NumberFormat(value)
-    numberFormats.set(value, format)
-  }
-  return format
+  return getIntlCached(`number:${value}`, () => new Intl.NumberFormat(value))
 }
 
 export function formatNumberFor(value: Locale, amount: number): string {
@@ -71,8 +68,13 @@ export function translate(
   }
 
   const output = interpolate(template, params, value)
-  if (import.meta.env.DEV && /\{\w+\}/.test(output)) {
-    console.warn(`[i18n] Missing interpolation params for "${key}":`, output)
+  if (import.meta.env.DEV) {
+    const missing = [...template.matchAll(/\{(\w+)\}/g)]
+      .map((match) => match[1] as string)
+      .filter((name) => params?.[name] === undefined || params?.[name] === null)
+    if (missing.length > 0) {
+      console.warn(`[i18n] Missing interpolation params for "${key}":`, missing)
+    }
   }
   return output
 }

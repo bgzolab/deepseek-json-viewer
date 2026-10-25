@@ -58,6 +58,15 @@ describe('i18n', () => {
     warn.mockRestore()
   })
 
+  it('does not warn when user content contains brace-like text', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    expect(translate('en', 'confirm.deleteMessage', { title: '{count}' })).toContain(
+      '{count}',
+    )
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
   it('persists the selected locale', () => {
     const stored = new Map<string, string>()
     vi.stubGlobal('localStorage', {

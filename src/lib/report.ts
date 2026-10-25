@@ -1,6 +1,6 @@
 import type { Conversation } from '../types/chat'
 import { conversationTitle } from './conversationTitle'
-import { formatNumberFor, locale, t, type MessageKey } from './i18n'
+import { formatNumberFor, getIntlCached, locale, t, type MessageKey } from './i18n'
 import type { ChatStats } from './stats'
 import { conversationStartedAt, countCharacters, conversationLastActivity, isChatTimestamp } from './stats'
 import { toTime } from './time'
@@ -79,9 +79,8 @@ function localDayStart(timestamp: number): number {
 export function formatDuration(milliseconds: number): string {
   if (!Number.isFinite(milliseconds) || milliseconds <= 0) return '—'
   if (milliseconds < 3_600_000) {
-    return t('report.durationMinutes', {
-      count: Math.max(1, Math.round(milliseconds / 60_000)),
-    })
+    const minutes = Math.max(1, Math.round(milliseconds / 60_000))
+    if (minutes < 60) return t('report.durationMinutes', { count: minutes })
   }
   if (milliseconds < DAY_MS) {
     const hours = Math.round((milliseconds / 3_600_000) * 10) / 10
@@ -259,43 +258,45 @@ function foldModels(models: Map<string, ModelBreakdown>): ModelBreakdown[] {
   return visible
 }
 
-let formatsLocale = ''
-let decimalFormat = createDecimalFormat(locale.value)
-let dateTimeFormat = createDateTimeFormat(locale.value)
-let dayFormat = createDayFormat(locale.value)
-
-function createDecimalFormat(value: string): Intl.NumberFormat {
-  return new Intl.NumberFormat(value, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  })
+function decimalFormatter(): Intl.NumberFormat {
+  const value = locale.value
+  return getIntlCached(
+    `decimal:${value}`,
+    () =>
+      new Intl.NumberFormat(value, {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }),
+  )
 }
 
-function createDateTimeFormat(value: string): Intl.DateTimeFormat {
-  return new Intl.DateTimeFormat(value, {
-    year: 'numeric',
-    month: value === 'en' ? 'short' : '2-digit',
-    day: value === 'en' ? 'numeric' : '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
+function dateTimeFormatter(): Intl.DateTimeFormat {
+  const value = locale.value
+  return getIntlCached(
+    `dateTime:${value}`,
+    () =>
+      new Intl.DateTimeFormat(value, {
+        year: 'numeric',
+        month: value === 'en' ? 'short' : '2-digit',
+        day: value === 'en' ? 'numeric' : '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }),
+  )
 }
 
-function createDayFormat(value: string): Intl.DateTimeFormat {
-  return new Intl.DateTimeFormat(value, {
-    year: 'numeric',
-    month: value === 'en' ? 'short' : '2-digit',
-    day: value === 'en' ? 'numeric' : '2-digit',
-  })
-}
-
-function ensureFormats(): void {
-  if (formatsLocale === locale.value) return
-  formatsLocale = locale.value
-  decimalFormat = createDecimalFormat(locale.value)
-  dateTimeFormat = createDateTimeFormat(locale.value)
-  dayFormat = createDayFormat(locale.value)
+function dayFormatter(): Intl.DateTimeFormat {
+  const value = locale.value
+  return getIntlCached(
+    `day:${value}`,
+    () =>
+      new Intl.DateTimeFormat(value, {
+        year: 'numeric',
+        month: value === 'en' ? 'short' : '2-digit',
+        day: value === 'en' ? 'numeric' : '2-digit',
+      }),
+  )
 }
 
 export function formatNumber(value: number): string {
@@ -303,11 +304,10 @@ export function formatNumber(value: number): string {
 }
 
 export function formatDecimal(value: number): string {
-  ensureFormats()
   // Keep large averages compact; a single decimal only matters below 100.
   return value >= 100
     ? formatNumberFor(locale.value, Math.round(value))
-    : decimalFormat.format(value)
+    : decimalFormatter().format(value)
 }
 
 export function formatPercent(value: number, total: number): string {
@@ -320,14 +320,12 @@ function normalizeDateFormat(value: string): string {
 
 function formatTimestamp(timestamp: number | null): string {
   if (timestamp === null || timestamp <= 0) return '—'
-  ensureFormats()
-  return normalizeDateFormat(dateTimeFormat.format(new Date(timestamp)))
+  return normalizeDateFormat(dateTimeFormatter().format(new Date(timestamp)))
 }
 
 export function formatDay(timestamp: number | null): string {
   if (timestamp === null || timestamp <= 0) return '—'
-  ensureFormats()
-  return normalizeDateFormat(dayFormat.format(new Date(timestamp)))
+  return normalizeDateFormat(dayFormatter().format(new Date(timestamp)))
 }
 
 function escapeMarkdown(value: string): string {

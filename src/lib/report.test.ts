@@ -138,6 +138,7 @@ describe('computeChatReport', () => {
   it('rolls near-day durations into days and pluralizes them', () => {
     setLocale('en')
     expect(formatDuration(23 * 3_600_000 + 57 * 60_000)).toBe('1 day')
+    expect(formatDuration(59 * 60_000 + 50_000)).toBe('1 h')
     expect(formatDuration(30 * 60_000)).toBe('30 min')
   })
 

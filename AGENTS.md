@@ -65,7 +65,7 @@
 
 ## Known deferred edge cases
 
-- Search occurrence counts come from raw Markdown while `<mark>` indexes come from rendered/sanitized text. Queries consisting of Markdown syntax or spanning stripped markup can overcount; message-level scroll fallback prevents breakage. Fixing this properly requires making rendered text the search-index source.
+- Search occurrence counts come from raw Markdown while `<mark>` indexes come from rendered/sanitized text. Queries consisting of Markdown syntax or spanning stripped markup can overcount; message-level scroll fallback prevents breakage. Image placeholders and code language labels are also excluded from highlighting, so queries matching only those labels fall back to message-level scrolling. Fixing this properly requires making rendered text the search-index source.
 - Messages with neither an ID nor a timestamp are intentionally deduplicated by `role + content` fingerprint per the existing contract. Legitimate identical messages in such minimal exports can collapse; changing this needs a product decision about cross-import merge semantics.
 - Re-importing a conversation after its active mapping branch changes keeps messages from the previous flattened branch (union merge). Message paths/node IDs are not persisted, so branch pruning/replacement needs a path-aware data model and a product decision.
 - `parseFile` creates and terminates one worker per file. Multi-file imports pay repeated worker startup cost; a reusable worker queue would be a performance optimization, not a correctness issue.
