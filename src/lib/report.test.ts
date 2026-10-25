@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import type { Conversation } from '../types/chat'
+import { setLocale } from './i18n'
 import { computeChatStats } from './stats'
 import { buildCsvReport, buildMarkdownReport, computeChatReport } from './report'
 
@@ -66,6 +67,8 @@ const conversations: Conversation[] = [
 ]
 
 describe('computeChatReport', () => {
+  afterEach(() => setLocale('zh-CN'))
+
   it('aggregates activity, content, models, and conversation sizes', () => {
     const report = computeChatReport(conversations)
 
@@ -111,6 +114,19 @@ describe('computeChatReport', () => {
     expect(markdown).toContain('A, "B" \\| C')
     expect(csv).toContain('会话,模型,开始时间,消息数,字数,持续时间')
     expect(csv).toContain('"A, ""B"" | C"')
+  })
+
+  it('exports an English report without unresolved placeholders', () => {
+    setLocale('en')
+    const stats = computeChatStats(conversations)
+    const report = computeChatReport(conversations)
+    const markdown = buildMarkdownReport(stats, report, Date.now())
+    const csv = buildCsvReport(stats, report, Date.now())
+
+    expect(markdown).toContain('# DeepSeek Chat Statistics')
+    expect(markdown).toContain('| Conversations | 2 |')
+    expect(markdown).not.toMatch(/\{\w+\}/)
+    expect(csv).toContain('Conversation,Model,Started at,Messages,Characters,Duration')
   })
 
   it('escapes backslashes, pipes, and carriage returns in markdown tables', () => {
