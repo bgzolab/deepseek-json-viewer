@@ -1,9 +1,11 @@
 import { createApp } from 'vue'
 import App from './App.vue'
+import { initTheme } from './lib/theme'
 import './styles/tokens.css'
 import './styles/base.css'
 import './styles/markdown.css'
 
+initTheme()
 createApp(App).mount('#app')
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

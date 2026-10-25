@@ -37,6 +37,7 @@
 - Persistence: IndexedDB `deepseek-json-viewer` v1, object store `conversations`, keyPath `id`. Each record is a `StoredConversation` including its messages.
 - Search index: an in-memory `Map` in the store. `searchIndexes` is non-reactive, so every mutation must also increment `indexVersion` or call `refreshSearchIndex` / `rebuildSearchIndexes`.
 - Markdown: `lib/markdown.ts` (marked renderer + DOMPurify + citation markers + search highlighting). `MarkdownBody.vue` is the only `v-html` boundary.
+- Theme: `lib/theme.ts` stores `auto|light|dark` in `dsjv:theme`, resolves `auto` against `prefers-color-scheme`, and sets `data-theme` on `<html>`. Dark tokens live in `tokens.css` under `:root[data-theme='dark']`; `index.html` applies the stored theme before first paint.
 - Brand assets: `src/lib/assets.ts` exposes `${BASE_URL}`-aware avatar/hero URLs. Public images live in `public/images/`.
 - `target/` is an ignored reference snapshot of the real DeepSeek UI, not part of the application.
 
@@ -53,7 +54,7 @@
 - DeepSeek fragments: `REQUEST` = user, `RESPONSE` = assistant, `THINK` = reasoning, `TOOL_SEARCH` = references, `FILE` = attachment metadata only. Text can contain both `[!reference:N]` and `[reference:N]` markers.
 - Supported generic shapes: top-level array, `{conversations|chats|data}`, nested `data.conversations`, or a single conversation; message arrays `messages|message_list|chat_messages|turns|history`. Full alias lists live at the top of `adapter.ts`; add tests for new aliases.
 - Dedupe semantics: conversations match by raw ID, then by fingerprint of title + sorted message fingerprints; messages match by raw ID, then by `role + content + createdAt`. Newer conversation metadata wins during a merge. Do not change these rules without updating `merge.test.ts` and `hash.test.ts`.
-- localStorage is only for `dsjv:selected-conversation` and `dsjv:sidebar-collapsed`. Never store chat content there.
+- localStorage is only for `dsjv:selected-conversation`, `dsjv:sidebar-collapsed`, and `dsjv:theme`. Never store chat content there.
 - Service worker: production only. `public/sw.js` precaches index-referenced assets, discovers the Vite import worker chunk from the app bundle, and caches the avatar/hero images; bump the cache name when changing the shell cache.
 - `data/raw/` is ignored. Never commit real chat exports.
 - UI convention: intentionally mirrors the DeepSeek web chat. Preserve the layout tokens (260px sidebar, 60px header, 752px thread, 776px composer), colors in `src/styles/tokens.css`, and inline SVG icons via `AppIcon.vue`. Avoid reintroducing gradients, glows, or marketing-style cards.

@@ -458,7 +458,7 @@ onBeforeUnmount(() => {
   gap: 8px;
   flex: none;
   padding: 8px 12px;
-  border-bottom: 1px solid #f0d7d7;
+  border-bottom: 1px solid var(--border-danger);
   background: var(--danger-soft);
   color: var(--danger);
   font-size: 11.5px;
@@ -482,7 +482,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 28px;
-  background: rgba(249, 250, 251, 0.82);
+  background: var(--bg-drop-overlay);
   backdrop-filter: blur(4px);
   pointer-events: none;
 }
@@ -495,9 +495,9 @@ onBeforeUnmount(() => {
   width: min(100%, 520px);
   min-height: 220px;
   padding: 28px;
-  border: 1.5px dashed #b7c8fe;
+  border: 1.5px dashed var(--border-brand);
   border-radius: 20px;
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
   text-align: center;
 }
 
@@ -536,7 +536,7 @@ onBeforeUnmount(() => {
   padding: 9px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.5;
@@ -545,12 +545,12 @@ onBeforeUnmount(() => {
 }
 
 .toast.is-error {
-  border-color: #f0d7d7;
+  border-color: var(--border-danger);
   color: var(--danger);
 }
 
 .toast.is-success {
-  border-color: #d8eee3;
+  border-color: var(--border-success);
   color: var(--success);
 }
 
@@ -617,7 +617,7 @@ onBeforeUnmount(() => {
     inset: 0;
     z-index: 45;
     display: block;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--bg-overlay);
     opacity: 0;
     pointer-events: none;
     transition: opacity 220ms ease;

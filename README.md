@@ -57,7 +57,7 @@ npm run typecheck
 - All parsing, deduplication, search, and storage happen in the browser.
 - Chat content is never uploaded. There is no backend, account, or synchronization.
 - Conversations are stored in IndexedDB. Clearing site data removes them.
-- Only small UI state (selected conversation and sidebar state) is stored in localStorage.
+- Only small UI state (selected conversation, sidebar state and theme) is stored in localStorage.
 - Production builds cache the app shell with a service worker for offline use; development does not register it.
 - No external CDN, fonts, images, or third-party scripts are used at runtime.
 

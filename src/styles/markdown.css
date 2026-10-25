@@ -115,7 +115,7 @@
   display: inline;
   padding: 0 5px;
   border-radius: 6px;
-  background: #ebeef2;
+  background: var(--code-inline);
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 14px;
@@ -127,7 +127,7 @@
   padding: 16px;
   overflow: auto;
   border-radius: 12px;
-  background: #f9fafb;
+  background: var(--code-block);
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 13px;
@@ -150,7 +150,7 @@
   margin: 16px 0;
   overflow: hidden;
   border-radius: 12px;
-  background: #f9fafb;
+  background: var(--code-block);
 }
 
 .markdown-body .md-code-head {
@@ -159,7 +159,7 @@
   justify-content: space-between;
   min-height: 38px;
   padding: 9px 14px;
-  background: #f9fafb;
+  background: var(--code-block-head);
   color: var(--text-tertiary);
   font-family: var(--font-sans);
   font-size: 13px;

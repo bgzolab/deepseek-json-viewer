@@ -55,7 +55,7 @@ import AppIcon from './AppIcon.vue'
   margin: 0 auto;
   border: 1px solid var(--border);
   border-radius: 24px;
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
 }
 
 .composer-input {

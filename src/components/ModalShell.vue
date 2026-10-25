@@ -139,7 +139,7 @@ onBeforeUnmount(() => {
   max-height: min(86vh, 760px);
   border: 1px solid var(--border);
   border-radius: 16px;
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
   box-shadow: var(--shadow-md);
   outline: none;
 }

@@ -327,7 +327,7 @@ function fileSummary(file: ImportFileOutcome): string {
 }
 
 .file-row.is-error {
-  background: #fffafa;
+  background: var(--danger-soft);
 }
 
 .file-row-main {
