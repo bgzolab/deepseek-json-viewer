@@ -242,7 +242,11 @@ onBeforeUnmount(() => observer?.disconnect())
     </div>
 
     <div v-if="chart.rows.length > 0" class="chart-area">
-      <div class="y-axis" aria-hidden="true">
+      <div
+        class="y-axis"
+        aria-hidden="true"
+        :style="{ width: `${LEFT}px`, height: `${HEIGHT}px` }"
+      >
         <span
           v-for="tick in chart.yTicks"
           :key="tick.value"
@@ -487,8 +491,6 @@ onBeforeUnmount(() => observer?.disconnect())
   top: 0;
   left: 0;
   z-index: 1;
-  width: 44px;
-  height: 230px;
   background: var(--bg-surface);
   pointer-events: none;
 }
