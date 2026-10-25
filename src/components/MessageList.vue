@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { StoredConversation } from '../types/chat'
 import { t } from '../lib/i18n'
+import { buildScrollNavItems } from '../lib/scrollNav'
 import AppIcon from './AppIcon.vue'
 import MessageItem from './MessageItem.vue'
+import ScrollNav from './ScrollNav.vue'
 
 const props = defineProps<{
   conversation: StoredConversation
@@ -26,6 +28,32 @@ const indexedMessages = computed(() =>
 const visibleMessages = computed(() => indexedMessages.value.slice(windowStart.value))
 const hiddenCount = computed(() => windowStart.value)
 const isEmpty = computed(() => props.conversation.messages.length === 0)
+const navItems = computed(() => buildScrollNavItems(props.conversation.messages))
+const activeNavId = ref('')
+
+let activeFrame = 0
+
+function updateActiveNav(): void {
+  const element = scrollEl.value
+  if (!element || navItems.value.length === 0) {
+    activeNavId.value = ''
+    return
+  }
+
+  const itemByIndex = new Map(navItems.value.map((item) => [item.index, item.id]))
+  const threshold = element.getBoundingClientRect().top + 72
+  let activeId = ''
+
+  for (const messageElement of element.querySelectorAll<HTMLElement>('[data-message-index]')) {
+    const itemId = itemByIndex.get(Number(messageElement.dataset.messageIndex))
+    if (!itemId) continue
+    activeId ||= itemId
+    if (messageElement.getBoundingClientRect().top > threshold) break
+    activeId = itemId
+  }
+
+  activeNavId.value = activeId
+}
 
 function resetWindow(): void {
   windowStart.value = Math.max(0, props.conversation.messages.length - INITIAL_WINDOW)
@@ -37,6 +65,7 @@ async function scrollToBottom(behavior: ScrollBehavior = 'smooth'): Promise<void
   if (!element) return
   element.scrollTo({ top: element.scrollHeight, behavior })
   atBottom.value = true
+  updateActiveNav()
 }
 
 async function loadEarlier(): Promise<void> {
@@ -48,6 +77,7 @@ async function loadEarlier(): Promise<void> {
   windowStart.value = Math.max(0, windowStart.value - LOAD_CHUNK)
   await nextTick()
   element.scrollTop = element.scrollHeight - previousHeight + previousTop
+  updateActiveNav()
 }
 
 function onScroll(): void {
@@ -55,6 +85,29 @@ function onScroll(): void {
   if (!element) return
   atBottom.value =
     element.scrollHeight - element.scrollTop - element.clientHeight < BOTTOM_THRESHOLD
+
+  if (activeFrame) return
+  activeFrame = window.requestAnimationFrame(() => {
+    activeFrame = 0
+    updateActiveNav()
+  })
+}
+
+async function jumpToMessage(index: number): Promise<void> {
+  const element = scrollEl.value
+  if (!element) return
+
+  if (index < windowStart.value) {
+    windowStart.value = Math.max(0, index - 16)
+    await nextTick()
+  }
+
+  const target = element.querySelector<HTMLElement>(`[data-message-index="${index}"]`)
+  if (!target) return
+
+  const targetTop =
+    target.getBoundingClientRect().top - element.getBoundingClientRect().top + element.scrollTop
+  element.scrollTo({ top: Math.max(0, targetTop - 12), behavior: 'smooth' })
 }
 
 function centerElementInScrollContainer(container: HTMLElement, target: HTMLElement): void {
@@ -116,6 +169,7 @@ watch(
     } else {
       await scrollToBottom('auto')
     }
+    updateActiveNav()
   },
 )
 
@@ -125,6 +179,7 @@ watch(
     if (length > previousLength && atBottom.value) {
       await scrollToBottom('auto')
     }
+    updateActiveNav()
   },
 )
 
@@ -135,6 +190,11 @@ onMounted(async () => {
   } else {
     await scrollToBottom('auto')
   }
+  updateActiveNav()
+})
+
+onBeforeUnmount(() => {
+  if (activeFrame) window.cancelAnimationFrame(activeFrame)
 })
 
 defineExpose({ scrollToBottom, focusMatch })
@@ -183,6 +243,8 @@ defineExpose({ scrollToBottom, focusMatch })
         <AppIcon name="arrow-down" :size="16" />
       </button>
     </Transition>
+
+    <ScrollNav :items="navItems" :active-id="activeNavId" @select="jumpToMessage" />
   </div>
 </template>
 

@@ -55,7 +55,7 @@ import AppIcon from './AppIcon.vue'
   z-index: 5;
   flex: none;
   width: 100%;
-  padding: 10px 20px calc(9px + env(safe-area-inset-bottom, 0px));
+  padding: 0 20px calc(9px + env(safe-area-inset-bottom, 0px));
   background: var(--bg-surface);
 }
 
@@ -154,7 +154,7 @@ import AppIcon from './AppIcon.vue'
 
 @media (max-width: 640px) {
   .composer-area {
-    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    padding: 0 12px calc(8px + env(safe-area-inset-bottom, 0px));
   }
 
   .composer {

@@ -76,6 +76,8 @@ export const zhCN = {
   'header.titleMatch': '标题匹配',
   'header.exitSearch': '退出搜索',
 
+  'nav.aria': '对话导航',
+
   'empty.welcome': '你好，欢迎回来',
   'empty.lead': '导入 DeepSeek 导出的聊天记录，在本地继续阅读你的对话。',
   'empty.dropTitle': '拖拽 JSON 文件到这里',

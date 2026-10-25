@@ -83,6 +83,8 @@ export const en = {
   'header.titleMatch': 'Title match',
   'header.exitSearch': 'Exit search',
 
+  'nav.aria': 'Conversation navigation',
+
   'empty.welcome': 'Hello, welcome back',
   'empty.lead': 'Import your exported DeepSeek chats and keep reading them locally.',
   'empty.dropTitle': 'Drop JSON files here',
