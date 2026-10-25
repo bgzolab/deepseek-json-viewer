@@ -313,13 +313,13 @@ function fileSummary(file: ImportFileOutcome): string {
   overflow: auto;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
 }
 
 .file-row {
   padding: 10px 12px;
   border-top: 1px solid var(--border);
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
 }
 
 .file-row:first-child {
@@ -327,7 +327,7 @@ function fileSummary(file: ImportFileOutcome): string {
 }
 
 .file-row.is-error {
-  background: #fffafa;
+  background: var(--danger-soft);
 }
 
 .file-row-main {

@@ -8,6 +8,23 @@
       content="在浏览器本地预览、搜索和整理 DeepSeek 导出的 JSON 聊天记录。数据不会离开你的设备。"
     />
     <meta name="theme-color" content="#f9fafb" />
+    <script>
+      // Keep these colors in sync with src/lib/theme.ts and src/styles/tokens.css.
+      let storedTheme = null
+      try {
+        storedTheme = localStorage.getItem('dsjv:theme')
+      } catch {
+        // Storage can be unavailable; still honor the system preference.
+      }
+      const dark =
+        storedTheme === 'dark' ||
+        (storedTheme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+      const theme = dark ? 'dark' : 'light'
+      document.documentElement.dataset.theme = theme
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', dark ? '#151517' : '#f9fafb')
+    </script>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <title>DeepSeek 对话预览</title>
   </head>

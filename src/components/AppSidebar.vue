@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { StoredConversation } from '../types/chat'
 import { avatarUrl } from '../lib/assets'
 import { hasActiveModal } from '../lib/modalStack'
+import { setThemePreference, themePreference, type ThemePreference } from '../lib/theme'
 import { relativeGroup } from '../lib/time'
 import { useChatStore } from '../stores/chatStore'
 import AppIcon from './AppIcon.vue'
@@ -22,6 +23,12 @@ const searchOpen = ref(false)
 const footerMenuOpen = ref(false)
 const footerMenu = ref<HTMLElement | null>(null)
 const footerTrigger = ref<HTMLButtonElement | null>(null)
+
+const themeOptions: Array<{ value: ThemePreference; label: string }> = [
+  { value: 'auto', label: '自动' },
+  { value: 'light', label: '浅色' },
+  { value: 'dark', label: '深色' },
+]
 
 const groups = computed<Array<{ label: string; items: StoredConversation[] }>>(() => {
   const conversations = store.visibleConversations.value
@@ -133,6 +140,24 @@ function requestClearFromMenu(): void {
   footerMenuOpen.value = false
   footerTrigger.value?.focus()
   emit('request-clear')
+}
+
+function onThemeOptionKeydown(event: KeyboardEvent, index: number): void {
+  const step =
+    event.key === 'ArrowRight' || event.key === 'ArrowDown'
+      ? 1
+      : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+        ? -1
+        : 0
+  if (step === 0) return
+  event.preventDefault()
+  const nextIndex = (index + step + themeOptions.length) % themeOptions.length
+  setThemePreference(themeOptions[nextIndex].value)
+  const buttons =
+    (event.currentTarget as HTMLElement).parentElement?.querySelectorAll<HTMLButtonElement>(
+      '.theme-option',
+    )
+  buttons?.[nextIndex]?.focus()
 }
 
 watch(
@@ -274,7 +299,7 @@ onBeforeUnmount(() => {
           class="storage-row"
           :class="{ 'is-open': footerMenuOpen }"
           :aria-expanded="footerMenuOpen"
-          title="本地缓存菜单"
+          title="更多菜单"
           @click="toggleFooterMenu"
         >
           <span class="storage-icon"><AppIcon name="database" :size="16" /></span>
@@ -297,8 +322,31 @@ onBeforeUnmount(() => {
             ref="footerMenu"
             class="footer-menu"
             role="group"
-            aria-label="本地缓存菜单"
+            aria-label="更多菜单"
           >
+            <div class="footer-theme">
+              <div class="footer-theme-label">
+                <AppIcon name="sun" :size="16" />
+                <span>主题</span>
+              </div>
+              <div class="theme-options" role="radiogroup" aria-label="主题">
+                <button
+                  v-for="(option, index) in themeOptions"
+                  :key="option.value"
+                  type="button"
+                  class="theme-option"
+                  :class="{ 'is-active': themePreference === option.value }"
+                  role="radio"
+                  :aria-checked="themePreference === option.value"
+                  :tabindex="themePreference === option.value ? 0 : -1"
+                  @click="setThemePreference(option.value)"
+                  @keydown="onThemeOptionKeydown($event, index)"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
+            <div class="footer-menu-divider" role="separator" />
             <button
               type="button"
               class="footer-menu-item"
@@ -422,7 +470,7 @@ onBeforeUnmount(() => {
   padding: 0 16px;
   border: 1px solid rgba(103, 158, 254, 0);
   border-radius: 100px;
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
   color: var(--text);
   font-size: 14px;
   font-weight: 500;
@@ -437,7 +485,7 @@ onBeforeUnmount(() => {
 
 .new-chat-button:hover {
   border-color: var(--border);
-  background: #fcfcfd;
+  background: var(--bg-hover);
 }
 
 .search-wrap {
@@ -461,7 +509,7 @@ onBeforeUnmount(() => {
 
 .search-wrap:focus-within {
   border-color: var(--border);
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
 }
 
 .search-icon {
@@ -665,8 +713,57 @@ onBeforeUnmount(() => {
   padding: 5px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
   box-shadow: var(--shadow-md);
+}
+
+.footer-theme {
+  padding: 4px 9px 6px;
+}
+
+.footer-theme-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.footer-theme-label :deep(.app-icon) {
+  flex: none;
+  color: var(--text-tertiary);
+}
+
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  margin-top: 7px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--bg-muted);
+}
+
+.theme-option {
+  padding: 3px 0;
+  border-radius: 6px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.theme-option:hover {
+  color: var(--text);
+}
+
+.theme-option.is-active {
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .footer-menu-item {

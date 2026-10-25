@@ -1,4 +1,4 @@
-const CACHE_NAME = 'deepseek-json-viewer-shell-v6'
+const CACHE_NAME = 'deepseek-json-viewer-shell-v7'
 const INDEX_URL = new URL('index.html', self.registration.scope).toString()
 const ROOT_URL = self.registration.scope
 

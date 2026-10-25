@@ -11,15 +11,20 @@
   --bg-app: #ffffff;
   --bg-sidebar: #f9fafb;
   --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
   --bg-muted: #f9fafb;
   --bg-hover: #f1f3f5;
   --bg-active: #e4edfd;
   --bg-active-strong: #d3e2ff;
   --bg-overlay: rgba(0, 0, 0, 0.4);
+  --bg-drop-overlay: rgba(249, 250, 251, 0.82);
 
   --border: rgba(0, 0, 0, 0.1);
   --border-subtle: rgba(0, 0, 0, 0.04);
   --border-strong: rgba(0, 0, 0, 0.14);
+  --border-danger: #f0d7d7;
+  --border-success: #d8eee3;
+  --border-brand: #b7c8fe;
 
   --text: #0f1115;
   --text-secondary: #61666b;
@@ -45,6 +50,13 @@
 
   --user-bubble: #edf3fe;
 
+  --code-inline: #ebeef2;
+  --code-block: #f9fafb;
+  --code-block-head: #f9fafb;
+
+  --scrollbar-thumb: #e1e5ee;
+  --scrollbar-thumb-hover: #cfd3d6;
+
   --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.08);
 
   --sidebar-width: 260px;
@@ -55,4 +67,59 @@
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --transition-fast: 140ms ease;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-app: #151517;
+  --bg-sidebar: #1b1b1c;
+  --bg-surface: #151517;
+  --bg-elevated: #2c2c2e;
+  --bg-muted: #232324;
+  --bg-hover: rgba(255, 255, 255, 0.08);
+  --bg-active: #2c2c2e;
+  --bg-active-strong: #34415b;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --bg-drop-overlay: rgba(21, 21, 23, 0.82);
+
+  --border: rgba(255, 255, 255, 0.12);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-danger: rgba(242, 90, 90, 0.32);
+  --border-success: rgba(78, 209, 126, 0.32);
+  --border-brand: rgba(103, 158, 254, 0.45);
+
+  --text: #f9fafb;
+  --text-secondary: #cfd3d6;
+  --text-tertiary: #adb2b8;
+  --text-caption: #81858c;
+
+  --brand: #5686fe;
+  --brand-hover: #679efe;
+  --brand-soft: #283142;
+  --brand-soft-strong: #34415b;
+  --brand-contrast: #ffffff;
+
+  --danger: #f25a5a;
+  --danger-hover: #ef4444;
+  --danger-soft: rgba(242, 90, 90, 0.15);
+  --warning: #f7ad31;
+  --warning-soft: #27241f;
+  --success: #4ed17e;
+  --success-soft: #233c2c;
+
+  --search-mark: #34415b;
+  --search-mark-current: #4868b2;
+
+  --user-bubble: #2c2c2e;
+
+  --code-inline: #2c2c2e;
+  --code-block: #1b1b1c;
+  --code-block-head: #2c2c2e;
+
+  --scrollbar-thumb: #3c3c3d;
+  --scrollbar-thumb-hover: #545557;
+
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.5);
 }

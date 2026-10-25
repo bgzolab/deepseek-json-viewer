@@ -92,7 +92,7 @@ h1 {
 
 .upload-box:hover {
   border-color: var(--border-strong);
-  background: #fdfdfe;
+  background: var(--bg-muted);
 }
 
 .upload-icon {

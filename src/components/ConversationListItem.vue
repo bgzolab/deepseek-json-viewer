@@ -115,7 +115,7 @@ const hasMatch = computed(
 }
 
 .is-active .item-meta {
-  color: #7d9bea;
+  color: var(--brand-hover);
 }
 
 .item-meta.is-match {
@@ -152,7 +152,7 @@ const hasMatch = computed(
 }
 
 .item-delete:hover {
-  background: rgba(236, 19, 19, 0.06);
+  background: var(--danger-soft);
   color: var(--danger);
 }
 

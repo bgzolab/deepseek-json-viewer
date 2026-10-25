@@ -170,7 +170,7 @@ const desktopToggleVisible = computed(() => store.state.sidebarCollapsed)
 
 .meta-separator {
   margin: 0 5px;
-  color: #d0d3d8;
+  color: var(--text-caption);
 }
 
 .meta-extra {
