@@ -1,0 +1,58 @@
+:root {
+  color-scheme: light;
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'SF Pro SC', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Segoe UI', sans-serif;
+  --font-mono:
+    'SFMono-Regular', 'Cascadia Code', 'Roboto Mono', Consolas, 'Liberation Mono', Menlo,
+    monospace;
+
+  --bg-app: #ffffff;
+  --bg-sidebar: #f9fafb;
+  --bg-surface: #ffffff;
+  --bg-muted: #f9fafb;
+  --bg-hover: #f1f3f5;
+  --bg-active: #e4edfd;
+  --bg-active-strong: #d3e2ff;
+  --bg-overlay: rgba(0, 0, 0, 0.4);
+
+  --border: rgba(0, 0, 0, 0.1);
+  --border-subtle: rgba(0, 0, 0, 0.04);
+  --border-strong: rgba(0, 0, 0, 0.14);
+
+  --text: #0f1115;
+  --text-secondary: #61666b;
+  --text-tertiary: #81858c;
+  --text-caption: #adb2b8;
+
+  --brand: #3964fe;
+  --brand-hover: #5686fe;
+  --brand-soft: #edf3fe;
+  --brand-soft-strong: #e4edfd;
+  --brand-contrast: #ffffff;
+
+  --danger: #ec1313;
+  --danger-hover: #c90f0f;
+  --danger-soft: #fef2f2;
+  --warning: #b7791f;
+  --warning-soft: #fffaeb;
+  --success: #15803d;
+  --success-soft: #f0fdf4;
+
+  --search-mark: #d3e2ff;
+  --search-mark-current: #a9c0ff;
+
+  --user-bubble: #edf3fe;
+
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.08);
+
+  --sidebar-width: 260px;
+  --header-height: 60px;
+  --content-width: 752px;
+  --content-gutter: 20px;
+  --composer-width: 776px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-fast: 140ms ease;
+}

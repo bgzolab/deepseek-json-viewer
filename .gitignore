@@ -203,3 +203,5 @@ docs/sessions/*
 
 # hide folder
 .bgzo/
+
+data/raw/

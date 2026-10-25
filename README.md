@@ -1,65 +1,78 @@
-# Template: everything based here.
+<p align="center">
+  <img src="./assets/deepseek-gril-profile-logo.webp" width="180" alt="DeepSeek JSON Viewer logo" />
+</p>
 
-[![Contributors](https://img.shields.io/github/contributors/bgzolab/template.svg?style=for-the-badge)](https://github.com/bgzolab/template/graphs/contributors)
-[![Forks](https://img.shields.io/github/forks/bgzolab/template.svg?style=for-the-badge)](https://github.com/bgzolab/template/network/members)
-[![Stargazers](https://img.shields.io/github/stars/bgzolab/template.svg?style=for-the-badge)](https://github.com/bgzolab/template/stargazers)
-[![Issues](https://img.shields.io/github/issues/bgzolab/template.svg?style=for-the-badge)](https://github.com/bgzolab/template/issues)
-[![Licence](https://img.shields.io/github/license/bgzolab/template.svg?style=for-the-badge)](https://github.com/bgzolab/template/blob/template/LICENCE)
-[![Telegram](https://img.shields.io/badge/-telegram-black.svg?style=for-the-badge&logo=telegram&colorB=555)](https://t.me/imbGZo)
+# DeepSeek JSON Viewer
 
-![template Name Screen Shot](https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2025/1753254271482.JPG)
+A local-first, browser-only viewer for DeepSeek chat exports. Import one or more JSON files and browse, search, and organize them without sending chat data anywhere.
 
-A template repository for my projects, whch contains a basic structure and some common files used in all my projects.
+## Highlights
 
-You can use this template to create your own projects by forking it or cloning it.
+- Multi-file import via file picker or drag and drop; repeated imports are de-duplicated
+- DeepSeek `mapping` exports plus common generic export shapes
+- Conversation-level and message-level merging/deduplication
+- IndexedDB persistence, per-conversation delete, and clear-all
+- DeepSeek-style layout with Markdown, tables, reasoning, citations, and copyable code blocks
+- Full-text search across titles, messages, and reasoning, with match navigation
+- Responsive sidebar drawer for mobile; assistant avatar and welcome artwork are bundled locally
+- Offline app-shell caching in production builds
 
-## Getting Started
+## Quick start
 
-Before you start, make sure you have Git installed on your machine. You can download it from [here](https://git-scm.com/downloads).
+Requires Node.js `>=22.12.0` and npm.
 
-Add the remote repository:
-
-```shell
-git remote add origin git@github.com:bgzolab/template.git
+```bash
+npm install
+npm run dev
 ```
 
-Fetch the `template` branch from the remote repository:
+Production build and local preview:
 
-```shell
-git fetch origin template
+```bash
+npm run build
+npm run preview
 ```
 
-Merge the `template` branch into your local repository to get started:
+Tests and type checks:
 
-```shell
-git merge origin/template --allow-unrelated-histories
+```bash
+npm test
+npm run typecheck
 ```
 
-## Usage
+`npm run build` emits a static site to `dist/`.
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+## Privacy and storage
 
-_For more examples, please refer to the [Documentation](https://github.com/bgzolab/template)_
+- All parsing, deduplication, search, and storage happen in the browser.
+- Chat content is never uploaded. There is no backend, account, or synchronization.
+- Conversations are stored in IndexedDB. Clearing site data removes them.
+- Only small UI state (selected conversation and sidebar state) is stored in localStorage.
+- Production builds cache the app shell with a service worker for offline use; development does not register it.
+- No external CDN, fonts, images, or third-party scripts are used at runtime.
 
-## Contributing
+## Supported imports
 
-Any contributions made are **greatly appreciated**.
+- Official DeepSeek exports with a `mapping` tree and `REQUEST` / `RESPONSE` / `THINK` fragments.
+- Generic structures such as a top-level array, `{ conversations }`, `{ chats }`, `{ data }`, or a single conversation object.
+- Common field aliases for IDs, titles, roles, content, and timestamps.
+- Branching conversations are flattened to the current/newest branch.
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
+Unknown or broken files are reported individually and do not abort the other files in the same import.
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'feat(module):add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## Development
 
-Top contributors:
+See [AGENTS.md](./AGENTS.md) for architecture, data-flow, format-adapter assumptions, persistence gotchas, UI conventions, and manual verification steps.
 
-<a href="https://github.com/bgzolab/template/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=bgzolab/template" alt="contrib.rocks image" />
-</a>
+Put local exports in `data/raw/` for testing; that directory is git-ignored. Do not commit real chat data.
+
+## Limitations
+
+- No sending messages, model API calls, export, cloud sync, or branch-tree view.
+- Reasoning is shown as collapsible text; tool-call details are not rendered.
+- Attachments are shown as metadata only.
+- All conversations are loaded into memory for instant search; very large exports use more memory.
 
 ## License
 
-All code is licensed under the AGPL-3.0 license. See `LICENSE` for more information.
+AGPL-3.0. See [LICENCE](./LICENCE).
