@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { t } from '../lib/i18n'
 import type { ScrollNavItem } from '../lib/scrollNav'
 
@@ -12,7 +12,6 @@ const emit = defineEmits<{
   select: [index: number]
 }>()
 
-const isDense = computed(() => props.items.length > 8)
 const listEl = ref<HTMLElement | null>(null)
 
 watch(
@@ -42,7 +41,6 @@ function itemTitle(item: ScrollNavItem): string {
   <nav
     v-if="items.length > 1"
     class="scroll-nav"
-    :class="{ 'is-dense': isDense }"
     :aria-label="t('nav.aria')"
   >
     <div class="scroll-nav-bg" aria-hidden="true" />
@@ -105,8 +103,8 @@ function itemTitle(item: ScrollNavItem): string {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: fit-content;
-  max-width: 240px;
+  width: max-content;
+  max-width: min(480px, calc(100vw - 80px));
   max-height: 100%;
   overflow: hidden;
   border: 1px solid transparent;
@@ -116,10 +114,6 @@ function itemTitle(item: ScrollNavItem): string {
   transition:
     background 0.2s,
     box-shadow 0.2s;
-}
-
-.scroll-nav.is-dense .scroll-nav-panel {
-  width: 240px;
 }
 
 .scroll-nav:hover .scroll-nav-panel,
@@ -135,7 +129,7 @@ function itemTitle(item: ScrollNavItem): string {
   flex-direction: column;
   align-items: flex-end;
   max-height: 250px;
-  padding: 15px 24px 15px 0;
+  padding: 15px 24px 15px 16px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
@@ -152,9 +146,9 @@ function itemTitle(item: ScrollNavItem): string {
   justify-content: flex-end;
   width: calc(100% - 6px);
   min-width: 0;
-  height: 30px;
+  min-height: 30px;
   margin-right: 8px;
-  padding: 0;
+  padding: 4px 0;
   color: var(--text-tertiary);
   line-height: 20px;
   cursor: pointer;
@@ -163,11 +157,11 @@ function itemTitle(item: ScrollNavItem): string {
 .scroll-nav-title {
   min-width: 0;
   margin-right: 12px;
-  overflow: hidden;
+  overflow-wrap: anywhere;
   font-size: 13px;
   line-height: 20px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-align: right;
+  white-space: normal;
   opacity: 0;
   transition:
     opacity 0.1s,
