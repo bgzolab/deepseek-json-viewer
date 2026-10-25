@@ -176,6 +176,33 @@ describe('computeChatReport', () => {
     )
   })
 
+  it('folds models beyond the display limit into one row', () => {
+    const manyModels = Array.from({ length: 25 }, (_, index) =>
+      conversation({
+        id: `model-${index}`,
+        model: `model-${index}`,
+        messages: [
+          {
+            id: `m-${index}`,
+            role: 'user',
+            content: 'hi',
+            createdAt: new Date(2026, 0, 1, 12).toISOString(),
+          },
+        ],
+      }),
+    )
+    const report = computeChatReport(manyModels)
+
+    expect(report.modelCount).toBe(25)
+    expect(report.models).toHaveLength(21)
+    expect(report.models[20]).toEqual({
+      model: '其他 5 个模型',
+      conversations: 5,
+      messages: 5,
+      characters: 10,
+    })
+  })
+
   it('does not count system messages as activity', () => {
     const report = computeChatReport([
       conversation({

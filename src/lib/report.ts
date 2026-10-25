@@ -55,6 +55,8 @@ export interface ChatReport {
   activity: ActivityReport
   conversations: ConversationRank[]
   lengthDistribution: LengthBucket[]
+  /** Number of distinct models before the display list is folded into “其他”. */
+  modelCount: number
   models: ModelBreakdown[]
   content: ContentReport
 }
@@ -224,12 +226,30 @@ export function computeChatReport(conversations: readonly Conversation[]): ChatR
       label: bucket.label,
       count: lengthCounts[index] ?? 0,
     })),
-    models: [...models.values()].sort(
-      (left, right) =>
-        right.messages - left.messages || left.model.localeCompare(right.model, 'zh-CN'),
-    ),
+    modelCount: models.size,
+    models: foldModels(models),
     content,
   }
+}
+
+const MODEL_DISPLAY_LIMIT = 20
+
+function foldModels(models: Map<string, ModelBreakdown>): ModelBreakdown[] {
+  const sorted = [...models.values()].sort(
+    (left, right) =>
+      right.messages - left.messages || left.model.localeCompare(right.model, 'zh-CN'),
+  )
+  if (sorted.length <= MODEL_DISPLAY_LIMIT) return sorted
+
+  const visible = sorted.slice(0, MODEL_DISPLAY_LIMIT)
+  const rest = sorted.slice(MODEL_DISPLAY_LIMIT)
+  visible.push({
+    model: `其他 ${rest.length} 个模型`,
+    conversations: rest.reduce((total, model) => total + model.conversations, 0),
+    messages: rest.reduce((total, model) => total + model.messages, 0),
+    characters: rest.reduce((total, model) => total + model.characters, 0),
+  })
+  return visible
 }
 
 const numberFormat = new Intl.NumberFormat('zh-CN')

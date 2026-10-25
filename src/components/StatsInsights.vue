@@ -285,7 +285,7 @@ const contentCards = computed(() => {
       <section class="insight-card" aria-label="模型分布">
         <div class="card-heading">
           <h4>模型分布</h4>
-          <span>{{ report.models.length }} 个模型</span>
+          <span>{{ report.modelCount }} 个模型</span>
         </div>
         <div class="model-list">
           <div v-for="model in report.models" :key="model.model" class="model-row">
