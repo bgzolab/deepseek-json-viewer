@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Conversation } from '../types/chat'
+import type { Conversation, StoredConversation } from '../types/chat'
 import { computeChatStats, computeChatTimeline, countCharacters } from './stats'
 
 function conversation(overrides: Partial<Conversation> = {}): Conversation {
@@ -52,10 +52,13 @@ describe('computeChatStats', () => {
     expect(stats.spanDays).toBe(11)
   })
 
-  it('handles conversations without timestamps', () => {
-    const stats = computeChatStats([
-      conversation({ messages: [{ id: 'm1', role: 'user', content: 'hi' }] }),
-    ])
+  it('handles conversations without chat timestamps', () => {
+    const stored: StoredConversation = {
+      ...conversation({ messages: [{ id: 'm1', role: 'user', content: 'hi' }] }),
+      importedAt: Date.now(),
+      importOrder: 1,
+    }
+    const stats = computeChatStats([stored])
 
     expect(stats.earliest).toBeNull()
     expect(stats.latest).toBeNull()

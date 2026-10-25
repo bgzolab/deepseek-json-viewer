@@ -6,6 +6,7 @@ import {
   formatDecimal,
   formatDuration,
   formatNumber,
+  formatPercent,
   type ChatReport,
   type ConversationRank,
 } from '../lib/report'
@@ -31,10 +32,6 @@ const rankTabs: Array<{ value: RankMetric; label: string }> = [
   { value: 'characters', label: '字数' },
   { value: 'duration', label: '时长' },
 ]
-
-function formatPercent(value: number, total: number): string {
-  return total > 0 ? `${Math.round((value / total) * 100)}%` : '0%'
-}
 
 const activityCards = computed(() => {
   const activity = props.report.activity

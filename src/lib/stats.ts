@@ -1,5 +1,5 @@
 import type { Conversation } from '../types/chat'
-import { effectiveConversationTime, toTime } from './time'
+import { toTime } from './time'
 
 const DAY_MS = 86_400_000
 // Ignore impossible chat timestamps so a single bad row cannot corrupt the report.
@@ -42,7 +42,7 @@ export function countCharacters(text: string | undefined): number {
 }
 
 export function conversationStartedAt(conversation: Conversation): number {
-  return toTime(conversation.createdAt) ?? effectiveConversationTime(conversation)
+  return toTime(conversation.createdAt) ?? 0
 }
 
 export function computeChatStats(conversations: readonly Conversation[]): ChatStats {
@@ -79,16 +79,18 @@ export function computeChatStats(conversations: readonly Conversation[]): ChatSt
 
     const startTime = firstMessageTime ?? conversationStartedAt(conversation)
     const startedAt = isChatTimestamp(startTime) ? startTime : 0
-    const activity = effectiveConversationTime(conversation)
 
     if (startedAt > 0) {
       earliest = earliest === null ? startedAt : Math.min(earliest, startedAt)
     }
-    if (isChatTimestamp(activity)) {
+    const activityTimes = [
+      toTime(conversation.updatedAt),
+      lastMessageTime,
+      toTime(conversation.createdAt),
+    ]
+    for (const activity of activityTimes) {
+      if (!isChatTimestamp(activity)) continue
       latest = latest === null ? activity : Math.max(latest, activity)
-    }
-    if (isChatTimestamp(lastMessageTime)) {
-      latest = latest === null ? lastMessageTime : Math.max(latest, lastMessageTime)
     }
 
     messageCount += rowMessages

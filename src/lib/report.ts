@@ -1,7 +1,7 @@
 import type { Conversation } from '../types/chat'
 import type { ChatStats } from './stats'
 import { conversationStartedAt, countCharacters, isChatTimestamp } from './stats'
-import { effectiveConversationTime, toTime } from './time'
+import { toTime } from './time'
 
 const DAY_MS = 86_400_000
 
@@ -173,7 +173,10 @@ export function computeChatReport(conversations: readonly Conversation[]): ChatR
 
     const startTime = firstMessageTime ?? conversationStartedAt(conversation)
     const startedAt = isChatTimestamp(startTime) ? startTime : 0
-    const activityTime = lastMessageTime ?? effectiveConversationTime(conversation)
+    const activityTime =
+      toTime(conversation.updatedAt) ??
+      lastMessageTime ??
+      toTime(conversation.createdAt)
     const lastActivity = isChatTimestamp(activityTime) ? activityTime : 0
     ranks.push({
       id: conversation.id,
@@ -256,6 +259,10 @@ export function formatDecimal(value: number): string {
   return value >= 100 ? formatNumber(Math.round(value)) : value.toFixed(1)
 }
 
+export function formatPercent(value: number, total: number): string {
+  return total > 0 ? `${Math.round((value / total) * 100)}%` : '0%'
+}
+
 function formatTimestamp(timestamp: number | null): string {
   if (timestamp === null || timestamp <= 0) return '—'
   return dateTimeFormat.format(new Date(timestamp)).replace(/\//g, '-')
@@ -298,10 +305,6 @@ export function buildMarkdownReport(
   const averageQuestion = average(content.userCharacters, content.userMessages)
   const averageAnswer = average(content.assistantCharacters, content.assistantMessages)
   const responseRatio = averageQuestion > 0 ? averageAnswer / averageQuestion : 0
-  const reasoningShare =
-    content.assistantMessages > 0
-      ? (content.reasoningMessages / content.assistantMessages) * 100
-      : 0
   const lines = [
     '# DeepSeek 对话统计',
     '',
@@ -349,7 +352,7 @@ export function buildMarkdownReport(
     '',
     '## 内容构成',
     '',
-    `- 带推理回复：${formatNumber(content.reasoningMessages)} / ${formatNumber(content.assistantMessages)}（${formatDecimal(reasoningShare)}%）`,
+    `- 带推理回复：${formatNumber(content.reasoningMessages)} / ${formatNumber(content.assistantMessages)}（${formatPercent(content.reasoningMessages, content.assistantMessages)}）`,
     `- 推理字数：${formatNumber(content.reasoningCharacters)}`,
     `- 引用来源：${formatNumber(content.references)}（${formatNumber(content.referenceMessages)} 条消息）`,
     `- 附件：${formatNumber(content.attachments)}（${formatNumber(content.attachmentMessages)} 条消息）`,
