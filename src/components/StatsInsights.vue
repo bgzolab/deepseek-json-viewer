@@ -519,7 +519,7 @@ const contentCards = computed(() => {
 }
 
 .rank-switch button.is-active {
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }

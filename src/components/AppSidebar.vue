@@ -311,14 +311,15 @@ onBeforeUnmount(() => {
                 <AppIcon name="sun" :size="16" />
                 <span>主题</span>
               </div>
-              <div class="theme-options" role="group" aria-label="主题">
+              <div class="theme-options" role="radiogroup" aria-label="主题">
                 <button
                   v-for="option in themeOptions"
                   :key="option.value"
                   type="button"
                   class="theme-option"
                   :class="{ 'is-active': themePreference === option.value }"
-                  :aria-pressed="themePreference === option.value"
+                  role="radio"
+                  :aria-checked="themePreference === option.value"
                   @click="setThemePreference(option.value)"
                 >
                   {{ option.label }}
