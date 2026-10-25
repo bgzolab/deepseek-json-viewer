@@ -341,7 +341,7 @@ onBeforeUnmount(() => observer?.disconnect())
       </div>
     </div>
 
-    <p v-else class="trend-empty">没有带时间戳的消息，无法绘制趋势。</p>
+    <p v-else class="trend-empty">当前数据没有带有效时间的消息，无法绘制趋势。</p>
   </section>
 </template>
 
