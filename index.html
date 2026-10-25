@@ -35,9 +35,15 @@
         // Storage can be unavailable; still honor the browser language.
       }
       const validLocale = ['zh-CN', 'en'].includes(storedLocale) ? storedLocale : null
+      const browserLanguages =
+        navigator.languages && navigator.languages.length
+          ? navigator.languages
+          : [navigator.language || '']
       document.documentElement.lang =
         validLocale ||
-        ((navigator.language || '').toLowerCase().startsWith('en') ? 'en' : 'zh-CN')
+        (browserLanguages.some((language) => language.toLowerCase().startsWith('en'))
+          ? 'en'
+          : 'zh-CN')
     </script>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <title>DeepSeek JSON Viewer</title>

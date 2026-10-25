@@ -88,10 +88,12 @@ export function normalizeLocale(value: unknown): Locale | null {
 
 export function resolveLocale(
   stored: string | null,
-  browserLanguage?: string | null,
+  browserLanguages?: readonly string[] | null,
 ): Locale {
   return (
     normalizeLocale(stored) ??
-    (browserLanguage?.toLowerCase().startsWith('en') ? 'en' : DEFAULT_LOCALE)
+    (browserLanguages?.some((language) => language.toLowerCase().startsWith('en'))
+      ? 'en'
+      : DEFAULT_LOCALE)
   )
 }

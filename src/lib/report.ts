@@ -304,10 +304,10 @@ export function formatNumber(value: number): string {
 }
 
 export function formatDecimal(value: number): string {
-  // Keep large averages compact; a single decimal only matters below 100.
-  return value >= 100
-    ? formatNumberFor(locale.value, Math.round(value))
-    : decimalFormatter().format(value)
+  // Keep very large averages compact; one decimal is stable below 1,000.
+  return value < 1_000
+    ? decimalFormatter().format(value)
+    : formatNumberFor(locale.value, Math.round(value))
 }
 
 export function formatPercent(value: number, total: number): string {

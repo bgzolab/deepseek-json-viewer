@@ -22,9 +22,9 @@ describe('i18n', () => {
   })
 
   it('prefers a stored locale, then an English browser language', () => {
-    expect(resolveLocale('en', 'zh-CN')).toBe('en')
-    expect(resolveLocale(null, 'en-GB')).toBe('en')
-    expect(resolveLocale('invalid', 'fr-FR')).toBe(DEFAULT_LOCALE)
+    expect(resolveLocale('en', ['zh-CN'])).toBe('en')
+    expect(resolveLocale(null, ['ja-JP', 'en-GB'])).toBe('en')
+    expect(resolveLocale('invalid', ['fr-FR'])).toBe(DEFAULT_LOCALE)
     expect(resolveLocale(null, null)).toBe(DEFAULT_LOCALE)
   })
 

@@ -6,6 +6,7 @@ import {
   buildCsvReport,
   buildMarkdownReport,
   computeChatReport,
+  formatDecimal,
   formatDuration,
 } from './report'
 
@@ -141,6 +142,13 @@ describe('computeChatReport', () => {
     expect(formatDuration(23 * 3_600_000 + 57 * 60_000)).toBe('1 day')
     expect(formatDuration(59 * 60_000 + 50_000)).toBe('1 h')
     expect(formatDuration(30 * 60_000)).toBe('30 min')
+  })
+
+  it('keeps one decimal until values reach 1,000', () => {
+    setLocale('en')
+    expect(formatDecimal(100.4)).toBe('100.4')
+    expect(formatDecimal(999.9)).toBe('999.9')
+    expect(formatDecimal(1_234.5)).toBe('1,235')
   })
 
   it('escapes backslashes, pipes, and carriage returns in markdown tables', () => {

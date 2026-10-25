@@ -19,7 +19,12 @@ function readLocale(): Locale {
   } catch {
     // Storage can be unavailable; fall back to the browser language.
   }
-  return resolveLocale(stored, typeof window !== 'undefined' ? navigator.language : null)
+  if (typeof window === 'undefined') return resolveLocale(stored)
+  const browserLanguages =
+    navigator.languages && navigator.languages.length > 0
+      ? navigator.languages
+      : [navigator.language]
+  return resolveLocale(stored, browserLanguages)
 }
 
 export const locale = ref<Locale>(readLocale())
