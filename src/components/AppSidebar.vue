@@ -540,7 +540,8 @@ onBeforeUnmount(() => {
 
 .group-label {
   position: sticky;
-  top: 0;
+  /* Pull the sticky label over the scroll container's 18px top padding. */
+  top: -18px;
   z-index: 2;
   margin: 0;
   padding: 2px 10px;
