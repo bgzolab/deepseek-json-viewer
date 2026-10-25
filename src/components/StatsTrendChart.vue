@@ -189,10 +189,10 @@ onBeforeUnmount(() => observer?.disconnect())
       <div class="trend-controls">
         <select v-model.number="rangeDays" class="range-select" aria-label="时间范围">
           <option :value="0">全部时间</option>
-          <option :value="7">近 7 天</option>
-          <option :value="30">近 30 天</option>
-          <option :value="90">近 90 天</option>
-          <option :value="365">近 1 年</option>
+          <option :value="7">最近活跃 7 天</option>
+          <option :value="30">最近活跃 30 天</option>
+          <option :value="90">最近活跃 90 天</option>
+          <option :value="365">最近活跃 1 年</option>
         </select>
         <div class="metric-switch" role="group" aria-label="统计指标">
           <button

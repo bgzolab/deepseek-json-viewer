@@ -98,9 +98,10 @@ function exportCsv(): void {
         <div class="stat-cell">
           <span class="stat-label">时间跨度</span>
           <strong>{{ stats.spanDays > 0 ? `${formatNumber(stats.spanDays)} 天` : '—' }}</strong>
-          <span class="stat-foot">
+          <span v-if="stats.earliest !== null && stats.latest !== null" class="stat-foot">
             {{ formatDay(stats.earliest) }} – {{ formatDay(stats.latest) }}
           </span>
+          <span v-else class="stat-foot">—</span>
         </div>
       </div>
 
