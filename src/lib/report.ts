@@ -221,7 +221,7 @@ export function computeChatReport(conversations: readonly Conversation[]): ChatR
       heatmap,
       heatmapMax,
     },
-    conversations: ranks,
+    conversations: ranks.sort((left, right) => left.startedAt - right.startedAt),
     lengthDistribution: LENGTH_BUCKETS.map((bucket, index) => ({
       label: bucket.label,
       count: lengthCounts[index] ?? 0,
