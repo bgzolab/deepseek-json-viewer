@@ -45,6 +45,22 @@ export function conversationStartedAt(conversation: Conversation): number {
   return toTime(conversation.createdAt) ?? 0
 }
 
+export function conversationLastActivity(
+  conversation: Conversation,
+  lastMessageTime: number | null = null,
+): number | null {
+  let latest: number | null = null
+  for (const time of [
+    toTime(conversation.updatedAt),
+    lastMessageTime,
+    toTime(conversation.createdAt),
+  ]) {
+    if (!isChatTimestamp(time)) continue
+    latest = latest === null ? time : Math.max(latest, time)
+  }
+  return latest
+}
+
 export function computeChatStats(conversations: readonly Conversation[]): ChatStats {
   const rows: ConversationStat[] = []
   let messageCount = 0
@@ -83,13 +99,8 @@ export function computeChatStats(conversations: readonly Conversation[]): ChatSt
     if (startedAt > 0) {
       earliest = earliest === null ? startedAt : Math.min(earliest, startedAt)
     }
-    const activityTimes = [
-      toTime(conversation.updatedAt),
-      lastMessageTime,
-      toTime(conversation.createdAt),
-    ]
-    for (const activity of activityTimes) {
-      if (!isChatTimestamp(activity)) continue
+    const activity = conversationLastActivity(conversation, lastMessageTime)
+    if (activity !== null) {
       latest = latest === null ? activity : Math.max(latest, activity)
     }
 
@@ -182,6 +193,9 @@ function bucketLabel(start: number, granularity: TimelineGranularity): string {
   const date = new Date(start)
   if (granularity === 'month') {
     return `${date.getFullYear()}/${date.getMonth() + 1}`
+  }
+  if (granularity === 'week') {
+    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`
   }
   return `${date.getMonth() + 1}/${date.getDate()}`
 }

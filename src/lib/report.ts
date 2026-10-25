@@ -1,6 +1,6 @@
 import type { Conversation } from '../types/chat'
 import type { ChatStats } from './stats'
-import { conversationStartedAt, countCharacters, isChatTimestamp } from './stats'
+import { conversationStartedAt, countCharacters, conversationLastActivity, isChatTimestamp } from './stats'
 import { toTime } from './time'
 
 const DAY_MS = 86_400_000
@@ -173,11 +173,7 @@ export function computeChatReport(conversations: readonly Conversation[]): ChatR
 
     const startTime = firstMessageTime ?? conversationStartedAt(conversation)
     const startedAt = isChatTimestamp(startTime) ? startTime : 0
-    const activityTime =
-      toTime(conversation.updatedAt) ??
-      lastMessageTime ??
-      toTime(conversation.createdAt)
-    const lastActivity = isChatTimestamp(activityTime) ? activityTime : 0
+    const lastActivity = conversationLastActivity(conversation, lastMessageTime) ?? 0
     ranks.push({
       id: conversation.id,
       title: conversation.title,

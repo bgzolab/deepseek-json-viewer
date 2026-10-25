@@ -188,4 +188,31 @@ describe('computeChatReport', () => {
     expect(report.activity.activeDays).toBe(1)
     expect(report.conversations[0]?.durationMs).toBe(0)
   })
+
+  it('uses the latest of metadata and message timestamps', () => {
+    const report = computeChatReport([
+      conversation({
+        updatedAt: new Date(2026, 0, 1, 12).toISOString(),
+        messages: [
+          {
+            id: 'm1',
+            role: 'user',
+            content: 'start',
+            createdAt: new Date(2026, 0, 1, 12).toISOString(),
+          },
+          {
+            id: 'm2',
+            role: 'assistant',
+            content: 'later',
+            createdAt: new Date(2026, 0, 2, 12).toISOString(),
+          },
+        ],
+      }),
+    ])
+
+    expect(report.conversations[0]?.lastActivity).toBe(
+      new Date(2026, 0, 2, 12).getTime(),
+    )
+    expect(report.conversations[0]?.durationMs).toBe(86_400_000)
+  })
 })

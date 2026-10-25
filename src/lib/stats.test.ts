@@ -176,6 +176,7 @@ describe('computeChatTimeline', () => {
 
     expect(timeline.granularity).toBe('week')
     expect(timeline.buckets.length).toBeGreaterThan(10)
+    expect(timeline.buckets[0]?.label).toMatch(/^\d{4}\//)
   })
 
   it('limits the timeline to the latest range', () => {
