@@ -87,6 +87,26 @@ describe('computeChatStats', () => {
       Date.parse('2026-01-05T12:00:00.000Z'),
     )
   })
+
+  it('ignores extreme timestamps in the summary range', () => {
+    const stats = computeChatStats([
+      conversation({
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '9999-12-31T23:59:59.000Z',
+        messages: [
+          {
+            id: 'm1',
+            role: 'user',
+            content: 'hi',
+            createdAt: '2026-01-05T12:00:00.000Z',
+          },
+        ],
+      }),
+    ])
+
+    expect(stats.earliest).toBe(Date.parse('2026-01-05T12:00:00.000Z'))
+    expect(stats.latest).toBe(Date.parse('2026-01-05T12:00:00.000Z'))
+  })
 })
 
 describe('computeChatTimeline', () => {

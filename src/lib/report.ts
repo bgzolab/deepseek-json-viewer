@@ -1,6 +1,6 @@
 import type { Conversation } from '../types/chat'
 import type { ChatStats } from './stats'
-import { countCharacters } from './stats'
+import { countCharacters, isChatTimestamp } from './stats'
 import { effectiveConversationTime, toTime } from './time'
 
 const DAY_MS = 86_400_000
@@ -148,7 +148,7 @@ export function computeChatReport(conversations: readonly Conversation[]): ChatR
       }
 
       const timestamp = toTime(message.createdAt)
-      if (timestamp === null) continue
+      if (!isChatTimestamp(timestamp)) continue
 
       firstMessageTime =
         firstMessageTime === null ? timestamp : Math.min(firstMessageTime, timestamp)
@@ -174,8 +174,10 @@ export function computeChatReport(conversations: readonly Conversation[]): ChatR
     modelEntry.characters += characters
     models.set(model, modelEntry)
 
-    const startedAt = firstMessageTime ?? conversationStart(conversation)
-    const lastActivity = lastMessageTime ?? effectiveConversationTime(conversation)
+    const startTime = firstMessageTime ?? conversationStart(conversation)
+    const startedAt = isChatTimestamp(startTime) ? startTime : 0
+    const activityTime = lastMessageTime ?? effectiveConversationTime(conversation)
+    const lastActivity = isChatTimestamp(activityTime) ? activityTime : 0
     ranks.push({
       id: conversation.id,
       title: conversation.title,
@@ -317,7 +319,7 @@ export function buildMarkdownReport(
     `| 字数 | ${formatNumber(stats.characterCount)}（含推理） |`,
     `| 时间跨度 | ${stats.spanDays > 0 ? `${formatNumber(stats.spanDays)} 天（${formatDay(stats.earliest)} – ${formatDay(stats.latest)}）` : '—'} |`,
     '',
-    `平均每会话 ${formatDecimal(stats.averageMessagesPerConversation)} 条消息 · 日均 ${formatDecimal(stats.messagesPerDay)} 条 · 平均每条 ${formatNumber(Math.round(stats.averageCharactersPerMessage))} 字`,
+    `平均每会话 ${formatDecimal(stats.averageMessagesPerConversation)} 条消息 · 日均 ${formatDecimal(stats.messagesPerDay)} 条 · 平均每条 ${formatDecimal(stats.averageCharactersPerMessage)} 字`,
     '',
     '## 活跃度',
     '',

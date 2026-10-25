@@ -2,9 +2,13 @@ import type { Conversation } from '../types/chat'
 import { effectiveConversationTime, toTime } from './time'
 
 const DAY_MS = 86_400_000
-// Ignore impossible chat timestamps so a single bad row cannot build a huge timeline.
-const MIN_TIMELINE_TIMESTAMP = 0
-const MAX_TIMELINE_TIMESTAMP = Date.UTC(2100, 0, 1)
+// Ignore impossible chat timestamps so a single bad row cannot corrupt the report.
+const MIN_TIMESTAMP = 0
+const MAX_TIMESTAMP = Date.UTC(2100, 0, 1)
+
+export function isChatTimestamp(timestamp: number | null): timestamp is number {
+  return timestamp !== null && timestamp > MIN_TIMESTAMP && timestamp < MAX_TIMESTAMP
+}
 
 export interface ConversationStat {
   id: string
@@ -56,6 +60,7 @@ export function computeChatStats(conversations: readonly Conversation[]): ChatSt
     let rowAssistantMessages = 0
     let rowCharacters = 0
     let firstMessageTime: number | null = null
+    let lastMessageTime: number | null = null
 
     for (const message of conversation.messages) {
       rowMessages += 1
@@ -64,20 +69,26 @@ export function computeChatStats(conversations: readonly Conversation[]): ChatSt
       rowCharacters +=
         countCharacters(message.content) + countCharacters(message.reasoning)
       const messageTime = toTime(message.createdAt)
-      if (messageTime !== null) {
+      if (isChatTimestamp(messageTime)) {
         firstMessageTime =
           firstMessageTime === null ? messageTime : Math.min(firstMessageTime, messageTime)
+        lastMessageTime =
+          lastMessageTime === null ? messageTime : Math.max(lastMessageTime, messageTime)
       }
     }
 
-    const startedAt = firstMessageTime ?? conversationStartedAt(conversation)
+    const startTime = firstMessageTime ?? conversationStartedAt(conversation)
+    const startedAt = isChatTimestamp(startTime) ? startTime : 0
     const activity = effectiveConversationTime(conversation)
 
     if (startedAt > 0) {
       earliest = earliest === null ? startedAt : Math.min(earliest, startedAt)
     }
-    if (activity > 0) {
+    if (isChatTimestamp(activity)) {
       latest = latest === null ? activity : Math.max(latest, activity)
+    }
+    if (isChatTimestamp(lastMessageTime)) {
+      latest = latest === null ? lastMessageTime : Math.max(latest, lastMessageTime)
     }
 
     messageCount += rowMessages
@@ -190,8 +201,7 @@ export function computeChatTimeline(
     for (const message of conversation.messages) {
       if (message.role !== 'user' && message.role !== 'assistant') continue
       const timestamp = toTime(message.createdAt)
-      if (timestamp === null) continue
-      if (timestamp < MIN_TIMELINE_TIMESTAMP || timestamp >= MAX_TIMELINE_TIMESTAMP) continue
+      if (!isChatTimestamp(timestamp)) continue
       points.push({
         timestamp,
         role: message.role,

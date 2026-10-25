@@ -130,4 +130,38 @@ describe('computeChatReport', () => {
     expect(csv).toContain(`"'=HYPERLINK(""https://example.com"")"`)
     expect(csv).toContain(`,'=1+1,`)
   })
+
+  it('ignores extreme timestamps in activity and durations', () => {
+    const report = computeChatReport([
+      conversation({
+        messages: [
+          {
+            id: 'm1',
+            role: 'user',
+            content: 'start',
+            createdAt: new Date(2026, 0, 1, 12).toISOString(),
+          },
+          {
+            id: 'm2',
+            role: 'assistant',
+            content: 'end',
+            createdAt: new Date(2026, 0, 2, 12).toISOString(),
+          },
+          {
+            id: 'm3',
+            role: 'assistant',
+            content: 'future',
+            createdAt: '9999-12-31T23:59:59.000Z',
+          },
+        ],
+      }),
+    ])
+
+    expect(report.activity.activeDays).toBe(2)
+    expect(report.activity.peakDay?.count).toBe(1)
+    expect(report.conversations[0]?.durationMs).toBe(86_400_000)
+    expect(report.conversations[0]?.lastActivity).toBe(
+      new Date(2026, 0, 2, 12).getTime(),
+    )
+  })
 })
