@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="在浏览器本地预览、搜索和整理 DeepSeek 导出的 JSON 聊天记录。数据不会离开你的设备。"
+      content="DeepSeek JSON Viewer: preview, search, and organize exported DeepSeek chats locally."
     />
     <meta name="theme-color" content="#f9fafb" />
     <script>
@@ -24,9 +24,24 @@
       document
         .querySelector('meta[name="theme-color"]')
         ?.setAttribute('content', dark ? '#151517' : '#f9fafb')
+
+      // Set the language before first paint. Title/meta are localized after mount.
+      let storedLocale = null
+      try {
+        storedLocale = localStorage.getItem('dsjv:locale')
+      } catch {
+        // Storage can be unavailable; still honor the browser language.
+      }
+      const validLocale =
+        storedLocale && /^[a-z]{2}(?:-[A-Za-z]{2,4})?$/.test(storedLocale)
+          ? storedLocale
+          : null
+      document.documentElement.lang =
+        validLocale ||
+        ((navigator.language || '').toLowerCase().startsWith('en') ? 'en' : 'zh-CN')
     </script>
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <title>DeepSeek 对话预览</title>
+    <title>DeepSeek JSON Viewer</title>
   </head>
   <body>
     <div id="app"></div>

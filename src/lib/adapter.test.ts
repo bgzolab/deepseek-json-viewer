@@ -280,10 +280,43 @@ describe('parseExport', () => {
     expect(() => parseExportText('[]', 'empty.json')).toThrow(/没有可导入的会话/)
   })
 
+  it('localizes parse warnings and errors', () => {
+    const result = parseExport(
+      [
+        {
+          id: 'dupe',
+          title: 'Duplicates',
+          messages: [
+            { id: 'm1', role: 'user', content: 'same' },
+            { id: 'm1', role: 'user', content: 'same' },
+          ],
+        },
+      ],
+      'dedupe.json',
+      'en',
+    )
+
+    expect(result.warnings.join(' ')).toContain('Removed 1 duplicate message')
+    expect(result.warnings.join(' ')).not.toMatch(/\{\w+\}/)
+    expect(() => parseExportText('{ broken', 'broken.json', 'en')).toThrow(
+      /JSON parsing failed/,
+    )
+  })
+
   it('handles empty conversations and missing titles gracefully', () => {
     const conversation = firstConversation({ id: 'empty', messages: [] })
     expect(conversation.title).toBe('未命名会话')
     expect(conversation.messages).toEqual([])
     expect(conversation.id).toBe('empty')
+  })
+
+  it('does not store a language-dependent source file name', () => {
+    const result = parseExport(
+      [{ id: 'no-file', title: 'No file', messages: [] }],
+      '',
+      'en',
+    )
+
+    expect(result.conversations[0]?.sourceFile).toBeUndefined()
   })
 })

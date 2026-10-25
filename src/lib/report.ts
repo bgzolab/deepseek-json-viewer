@@ -84,9 +84,8 @@ export function formatDuration(milliseconds: number): string {
     })
   }
   if (milliseconds < DAY_MS) {
-    return t('report.durationHours', {
-      count: Math.round((milliseconds / 3_600_000) * 10) / 10,
-    })
+    const hours = Math.round((milliseconds / 3_600_000) * 10) / 10
+    if (hours < 24) return t('report.durationHours', { count: hours })
   }
   return t('report.durationDays', {
     count: Math.round((milliseconds / DAY_MS) * 10) / 10,

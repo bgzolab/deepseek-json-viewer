@@ -4,7 +4,7 @@ import {
   normalizeLocale,
   translate,
   type Locale,
-} from '../lib/i18n'
+} from '../lib/i18n/messages'
 
 export interface ImportWorkerRequest {
   file: File

@@ -13,8 +13,8 @@ import {
   type Locale,
   type MessageKey,
   type MessageParams,
-} from './i18n'
-import { parseTimestamp, toTime } from './time'
+} from './i18n/messages'
+import { parseTimestamp, toTime } from './timeCore'
 
 type JsonRecord = Record<string, unknown>
 
@@ -655,8 +655,8 @@ function normalizeConversation(
     title,
     messages,
     fingerprint,
-    sourceFile,
   }
+  if (sourceFile) conversation.sourceFile = sourceFile
   if (createdAt) conversation.createdAt = createdAt
   if (updatedAt) conversation.updatedAt = updatedAt
   if (model) conversation.model = model
@@ -666,7 +666,7 @@ function normalizeConversation(
 
 export function parseExport(
   root: unknown,
-  sourceFile = '未命名文件',
+  sourceFile = '',
   language: Locale = DEFAULT_LOCALE,
 ): ParseResult {
   activeLocale = language
@@ -704,7 +704,6 @@ export function parseExport(
     warnings.push(
       tr('adapter.hiddenWarnings', {
         count: warningCount - warningMessages.length,
-        hidden: warningCount - warningMessages.length,
       }),
     )
   }
@@ -715,7 +714,7 @@ export function parseExport(
 
 export function parseExportText(
   text: string,
-  sourceFile = '未命名文件',
+  sourceFile = '',
   language: Locale = DEFAULT_LOCALE,
 ): ParseResult {
   let root: unknown

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_LOCALE,
   locale,
@@ -10,7 +10,10 @@ import {
 } from './i18n'
 
 describe('i18n', () => {
-  afterEach(() => setLocale(DEFAULT_LOCALE))
+  afterEach(() => {
+    setLocale(DEFAULT_LOCALE)
+    vi.unstubAllGlobals()
+  })
 
   it('falls back to the default locale for unsupported values', () => {
     expect(normalizeLocale('en')).toBe('en')
@@ -46,5 +49,17 @@ describe('i18n', () => {
     setLocale('en')
     expect(locale.value).toBe('en')
     expect(t('menu.about')).toBe('About')
+  })
+
+  it('persists the selected locale', () => {
+    const stored = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => stored.get(key) ?? null,
+      setItem: (key: string, value: string) => stored.set(key, value),
+      removeItem: (key: string) => stored.delete(key),
+    })
+
+    setLocale('en')
+    expect(stored.get('dsjv:locale')).toBe('en')
   })
 })

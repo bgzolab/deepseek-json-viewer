@@ -2,7 +2,12 @@ import { afterEach, describe, expect, it } from 'vitest'
 import type { Conversation } from '../types/chat'
 import { setLocale } from './i18n'
 import { computeChatStats } from './stats'
-import { buildCsvReport, buildMarkdownReport, computeChatReport } from './report'
+import {
+  buildCsvReport,
+  buildMarkdownReport,
+  computeChatReport,
+  formatDuration,
+} from './report'
 
 function conversation(overrides: Partial<Conversation> = {}): Conversation {
   return {
@@ -128,6 +133,12 @@ describe('computeChatReport', () => {
     expect(markdown).toContain('Jan 2, 2026')
     expect(markdown).not.toMatch(/\{\w+\}/)
     expect(csv).toContain('Conversation,Model,Started at,Messages,Characters,Duration')
+  })
+
+  it('rolls near-day durations into days and pluralizes them', () => {
+    setLocale('en')
+    expect(formatDuration(23 * 3_600_000 + 57 * 60_000)).toBe('1 day')
+    expect(formatDuration(30 * 60_000)).toBe('30 min')
   })
 
   it('escapes backslashes, pipes, and carriage returns in markdown tables', () => {
