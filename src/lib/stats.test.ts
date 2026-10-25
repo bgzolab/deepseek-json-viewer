@@ -186,6 +186,96 @@ describe('computeChatTimeline', () => {
     expect(timeline.buckets[0]?.label).toMatch(/^\d{4}\//)
   })
 
+  it('switches to monthly buckets for spans over two years', () => {
+    const timeline = computeChatTimeline([
+      conversation({
+        messages: [
+          {
+            id: 'm1',
+            role: 'user',
+            content: 'start',
+            createdAt: new Date(2023, 10, 15, 12).toISOString(),
+          },
+          {
+            id: 'm2',
+            role: 'assistant',
+            content: 'end',
+            createdAt: new Date(2026, 9, 10, 12).toISOString(),
+          },
+        ],
+      }),
+    ])
+
+    // November 2023 through October 2026, built without Date so the
+    // expectation does not share the implementation's month arithmetic.
+    const expectedLabels: string[] = []
+    for (let year = 2023, month = 11; expectedLabels.length < 36; month += 1) {
+      if (month > 12) {
+        year += 1
+        month = 1
+      }
+      expectedLabels.push(`${year}/${month}`)
+    }
+
+    expect(timeline.granularity).toBe('month')
+    expect(timeline.buckets.map((bucket) => bucket.label)).toEqual(expectedLabels)
+    timeline.buckets.forEach((bucket, index) => {
+      expect(bucket.start).toBe(new Date(2023, 10 + index, 1).getTime())
+      const next = timeline.buckets[index + 1]
+      if (next) expect(bucket.end).toBe(next.start - 1)
+    })
+    expect(timeline.buckets[0]?.userMessages).toBe(1)
+    expect(timeline.buckets.at(-1)?.assistantMessages).toBe(1)
+  })
+
+  it('rolls monthly buckets over from December into January', () => {
+    const timeline = computeChatTimeline([
+      conversation({
+        messages: [
+          {
+            id: 'm1',
+            role: 'user',
+            content: 'start',
+            createdAt: new Date(2023, 5, 1, 12).toISOString(),
+          },
+          {
+            id: 'm2',
+            role: 'assistant',
+            content: 'december',
+            createdAt: new Date(2025, 11, 31, 12).toISOString(),
+          },
+          {
+            id: 'm3',
+            role: 'user',
+            content: 'january',
+            createdAt: new Date(2026, 0, 1, 12).toISOString(),
+          },
+        ],
+      }),
+    ])
+
+    const labels = timeline.buckets.map((bucket) => bucket.label)
+    const december = labels.indexOf('2025/12')
+    const january = labels.indexOf('2026/1')
+
+    expect(timeline.granularity).toBe('month')
+    expect(december).toBeGreaterThan(-1)
+    expect(january).toBe(december + 1)
+    expect(labels.at(-1)).toBe('2026/1')
+    expect(timeline.buckets[december]).toMatchObject({
+      start: new Date(2025, 11, 1).getTime(),
+      end: new Date(2026, 0, 1).getTime() - 1,
+      userMessages: 0,
+      assistantMessages: 1,
+    })
+    expect(timeline.buckets[january]).toMatchObject({
+      start: new Date(2026, 0, 1).getTime(),
+      end: new Date(2026, 1, 1).getTime() - 1,
+      userMessages: 1,
+      assistantMessages: 0,
+    })
+  })
+
   it('limits the timeline to the latest range', () => {
     const timeline = computeChatTimeline(
       [
