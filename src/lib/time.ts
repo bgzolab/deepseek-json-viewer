@@ -95,14 +95,26 @@ function getDateFormats(): DateFormats {
       month: 'numeric',
       day: 'numeric',
     }),
-    full: new Intl.DateTimeFormat(value, {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }),
+    full: new Intl.DateTimeFormat(
+      value,
+      value === 'en'
+        ? {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          }
+        : {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          },
+    ),
   }
   return formats
 }
@@ -131,7 +143,8 @@ function compactTimestamp(timestamp: number): string {
 export function formatDateTime(value: string | undefined): string {
   const timestamp = toTime(value)
   if (timestamp === null) return '—'
-  return getDateFormats().full.format(new Date(timestamp)).replace(/\//g, '-')
+  const formatted = getDateFormats().full.format(new Date(timestamp))
+  return locale.value === 'zh-CN' ? formatted.replace(/\//g, '-') : formatted
 }
 
 export function compactConversationDate(conversation: Conversation): string {

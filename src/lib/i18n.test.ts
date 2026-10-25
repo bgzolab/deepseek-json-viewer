@@ -3,6 +3,7 @@ import {
   DEFAULT_LOCALE,
   locale,
   normalizeLocale,
+  resolveLocale,
   setLocale,
   t,
   translate,
@@ -15,6 +16,13 @@ describe('i18n', () => {
     expect(normalizeLocale('en')).toBe('en')
     expect(normalizeLocale('fr')).toBeNull()
     expect(normalizeLocale(null)).toBeNull()
+  })
+
+  it('prefers a stored locale, then an English browser language', () => {
+    expect(resolveLocale('en', 'zh-CN')).toBe('en')
+    expect(resolveLocale(null, 'en-GB')).toBe('en')
+    expect(resolveLocale('invalid', 'fr-FR')).toBe(DEFAULT_LOCALE)
+    expect(resolveLocale(null, null)).toBe(DEFAULT_LOCALE)
   })
 
   it('translates interface strings', () => {

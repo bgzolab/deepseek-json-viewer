@@ -84,9 +84,13 @@ export function formatDuration(milliseconds: number): string {
     })
   }
   if (milliseconds < DAY_MS) {
-    return t('report.durationHours', { count: (milliseconds / 3_600_000).toFixed(1) })
+    return t('report.durationHours', {
+      count: Math.round((milliseconds / 3_600_000) * 10) / 10,
+    })
   }
-  return t('report.durationDays', { count: (milliseconds / DAY_MS).toFixed(1) })
+  return t('report.durationDays', {
+    count: Math.round((milliseconds / DAY_MS) * 10) / 10,
+  })
 }
 
 export function computeChatReport(conversations: readonly Conversation[]): ChatReport {
@@ -264,8 +268,8 @@ let dayFormat = createDayFormat(locale.value)
 function createDateTimeFormat(value: string): Intl.DateTimeFormat {
   return new Intl.DateTimeFormat(value, {
     year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
+    month: value === 'en' ? 'short' : '2-digit',
+    day: value === 'en' ? 'numeric' : '2-digit',
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
@@ -275,8 +279,8 @@ function createDateTimeFormat(value: string): Intl.DateTimeFormat {
 function createDayFormat(value: string): Intl.DateTimeFormat {
   return new Intl.DateTimeFormat(value, {
     year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
+    month: value === 'en' ? 'short' : '2-digit',
+    day: value === 'en' ? 'numeric' : '2-digit',
   })
 }
 
@@ -301,16 +305,20 @@ export function formatPercent(value: number, total: number): string {
   return total > 0 ? `${Math.round((value / total) * 100)}%` : '0%'
 }
 
+function normalizeDateFormat(value: string): string {
+  return locale.value === 'zh-CN' ? value.replace(/\//g, '-') : value
+}
+
 function formatTimestamp(timestamp: number | null): string {
   if (timestamp === null || timestamp <= 0) return '—'
   ensureFormats()
-  return dateTimeFormat.format(new Date(timestamp)).replace(/\//g, '-')
+  return normalizeDateFormat(dateTimeFormat.format(new Date(timestamp)))
 }
 
 export function formatDay(timestamp: number | null): string {
   if (timestamp === null || timestamp <= 0) return '—'
   ensureFormats()
-  return dayFormat.format(new Date(timestamp)).replace(/\//g, '-')
+  return normalizeDateFormat(dayFormat.format(new Date(timestamp)))
 }
 
 function escapeMarkdown(value: string): string {

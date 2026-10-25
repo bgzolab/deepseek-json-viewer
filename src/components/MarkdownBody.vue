@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { ChatReference } from '../types/chat'
 import { copyText } from '../lib/clipboard'
-import { t } from '../lib/i18n'
+import { locale, t } from '../lib/i18n'
 import { highlightSearchInHtml, renderMarkdown } from '../lib/markdown'
 
 const props = withDefaults(
@@ -19,7 +19,11 @@ const props = withDefaults(
   },
 )
 
-const baseHtml = computed(() => renderMarkdown(props.text, props.references))
+const baseHtml = computed(() => {
+  // Rendered UI labels (code copy, image placeholders) follow the active locale.
+  void locale.value
+  return renderMarkdown(props.text, props.references)
+})
 
 const html = computed(() => {
   if (!props.query) return baseHtml.value

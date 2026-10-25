@@ -18,6 +18,7 @@ import { parseTimestamp, toTime } from './time'
 
 type JsonRecord = Record<string, unknown>
 
+// Parsing is synchronous and each worker handles one file at a time.
 let activeLocale: Locale = DEFAULT_LOCALE
 
 function tr(key: MessageKey, params?: MessageParams): string {

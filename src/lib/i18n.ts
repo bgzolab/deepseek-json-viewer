@@ -969,24 +969,24 @@ export function normalizeLocale(value: unknown): Locale | null {
     : null
 }
 
+export function resolveLocale(
+  stored: string | null,
+  browserLanguage?: string | null,
+): Locale {
+  return (
+    normalizeLocale(stored) ??
+    (browserLanguage?.toLowerCase().startsWith('en') ? 'en' : DEFAULT_LOCALE)
+  )
+}
+
 function readLocale(): Locale {
+  let stored: string | null = null
   try {
-    const stored = normalizeLocale(localStorage.getItem(LOCALE_KEY))
-    if (stored) return stored
+    stored = localStorage.getItem(LOCALE_KEY)
   } catch {
     // Storage can be unavailable; fall back to the browser language.
   }
-  try {
-    if (
-      typeof window !== 'undefined' &&
-      navigator.language?.toLowerCase().startsWith('en')
-    ) {
-      return 'en'
-    }
-  } catch {
-    // Keep the default when the browser language cannot be read.
-  }
-  return DEFAULT_LOCALE
+  return resolveLocale(stored, typeof window !== 'undefined' ? navigator.language : null)
 }
 
 export const locale = ref<Locale>(readLocale())
