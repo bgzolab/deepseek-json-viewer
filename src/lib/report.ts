@@ -1,6 +1,6 @@
 import type { Conversation } from '../types/chat'
 import { conversationTitle } from './conversationTitle'
-import { locale, t, type MessageKey } from './i18n'
+import { formatNumberFor, locale, t, type MessageKey } from './i18n'
 import type { ChatStats } from './stats'
 import { conversationStartedAt, countCharacters, conversationLastActivity, isChatTimestamp } from './stats'
 import { toTime } from './time'
@@ -260,7 +260,6 @@ function foldModels(models: Map<string, ModelBreakdown>): ModelBreakdown[] {
 }
 
 let formatsLocale = ''
-let numberFormat = new Intl.NumberFormat(locale.value)
 let decimalFormat = createDecimalFormat(locale.value)
 let dateTimeFormat = createDateTimeFormat(locale.value)
 let dayFormat = createDayFormat(locale.value)
@@ -294,21 +293,19 @@ function createDayFormat(value: string): Intl.DateTimeFormat {
 function ensureFormats(): void {
   if (formatsLocale === locale.value) return
   formatsLocale = locale.value
-  numberFormat = new Intl.NumberFormat(locale.value)
   decimalFormat = createDecimalFormat(locale.value)
   dateTimeFormat = createDateTimeFormat(locale.value)
   dayFormat = createDayFormat(locale.value)
 }
 
 export function formatNumber(value: number): string {
-  ensureFormats()
-  return numberFormat.format(value)
+  return formatNumberFor(locale.value, value)
 }
 
 export function formatDecimal(value: number): string {
   ensureFormats()
   return value >= 100
-    ? numberFormat.format(Math.round(value))
+    ? formatNumberFor(locale.value, Math.round(value))
     : decimalFormat.format(value)
 }
 
