@@ -25,17 +25,15 @@
         .querySelector('meta[name="theme-color"]')
         ?.setAttribute('content', dark ? '#151517' : '#f9fafb')
 
-      // Set the language before first paint. Title/meta are localized after mount.
+      // Set the language before first paint. Keep the supported list in sync with
+      // src/lib/i18n/types.ts. Title/meta are localized after mount.
       let storedLocale = null
       try {
         storedLocale = localStorage.getItem('dsjv:locale')
       } catch {
         // Storage can be unavailable; still honor the browser language.
       }
-      const validLocale =
-        storedLocale && /^[a-z]{2}(?:-[A-Za-z]{2,4})?$/.test(storedLocale)
-          ? storedLocale
-          : null
+      const validLocale = ['zh-CN', 'en'].includes(storedLocale) ? storedLocale : null
       document.documentElement.lang =
         validLocale ||
         ((navigator.language || '').toLowerCase().startsWith('en') ? 'en' : 'zh-CN')

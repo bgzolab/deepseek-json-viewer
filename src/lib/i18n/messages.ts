@@ -70,7 +70,11 @@ export function translate(
     template = entry[category] ?? entry.other ?? entry.one ?? ''
   }
 
-  return interpolate(template, params, value)
+  const output = interpolate(template, params, value)
+  if (import.meta.env.DEV && /\{\w+\}/.test(output)) {
+    console.warn(`[i18n] Missing interpolation params for "${key}":`, output)
+  }
+  return output
 }
 
 export function normalizeLocale(value: unknown): Locale | null {

@@ -51,6 +51,13 @@ describe('i18n', () => {
     expect(t('menu.about')).toBe('About')
   })
 
+  it('warns in development when interpolation params are missing', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    expect(translate('en', 'header.messages', {})).toContain('{count}')
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
   it('persists the selected locale', () => {
     const stored = new Map<string, string>()
     vi.stubGlobal('localStorage', {

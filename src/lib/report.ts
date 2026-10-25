@@ -261,8 +261,16 @@ function foldModels(models: Map<string, ModelBreakdown>): ModelBreakdown[] {
 
 let formatsLocale = ''
 let numberFormat = new Intl.NumberFormat(locale.value)
+let decimalFormat = createDecimalFormat(locale.value)
 let dateTimeFormat = createDateTimeFormat(locale.value)
 let dayFormat = createDayFormat(locale.value)
+
+function createDecimalFormat(value: string): Intl.NumberFormat {
+  return new Intl.NumberFormat(value, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })
+}
 
 function createDateTimeFormat(value: string): Intl.DateTimeFormat {
   return new Intl.DateTimeFormat(value, {
@@ -287,6 +295,7 @@ function ensureFormats(): void {
   if (formatsLocale === locale.value) return
   formatsLocale = locale.value
   numberFormat = new Intl.NumberFormat(locale.value)
+  decimalFormat = createDecimalFormat(locale.value)
   dateTimeFormat = createDateTimeFormat(locale.value)
   dayFormat = createDayFormat(locale.value)
 }
@@ -297,7 +306,10 @@ export function formatNumber(value: number): string {
 }
 
 export function formatDecimal(value: number): string {
-  return value >= 100 ? formatNumber(Math.round(value)) : value.toFixed(1)
+  ensureFormats()
+  return value >= 100
+    ? numberFormat.format(Math.round(value))
+    : decimalFormat.format(value)
 }
 
 export function formatPercent(value: number, total: number): string {
