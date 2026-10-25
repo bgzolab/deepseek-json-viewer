@@ -12,11 +12,16 @@ const emit = defineEmits<{
   import: []
   'request-clear': []
   'request-delete': [id: string]
+  'open-about': []
+  'open-stats': []
 }>()
 
 const store = useChatStore()
 const searchInput = ref<HTMLInputElement | null>(null)
 const searchOpen = ref(false)
+const footerMenuOpen = ref(false)
+const footerMenu = ref<HTMLElement | null>(null)
+const footerTrigger = ref<HTMLButtonElement | null>(null)
 
 const groups = computed<Array<{ label: string; items: StoredConversation[] }>>(() => {
   const conversations = store.visibleConversations.value
@@ -81,6 +86,7 @@ function onSearchKeydown(event: KeyboardEvent): void {
 
 async function focusSearch(): Promise<void> {
   if (hasActiveModal()) return
+  footerMenuOpen.value = false
   if (window.matchMedia('(max-width: 860px)').matches) {
     store.setMobileSidebarOpen(true)
   } else if (store.state.sidebarCollapsed) {
@@ -93,11 +99,40 @@ async function focusSearch(): Promise<void> {
 }
 
 function onGlobalKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape' && footerMenuOpen.value) {
+    footerMenuOpen.value = false
+    footerTrigger.value?.focus()
+    return
+  }
   if (hasActiveModal()) return
   if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
     event.preventDefault()
     void focusSearch()
   }
+}
+
+function onDocumentPointerDown(event: PointerEvent): void {
+  if (!footerMenuOpen.value) return
+  const target = event.target as Node
+  if (footerMenu.value?.contains(target) || footerTrigger.value?.contains(target)) return
+  footerMenuOpen.value = false
+}
+
+function toggleFooterMenu(): void {
+  footerMenuOpen.value = !footerMenuOpen.value
+}
+
+function openFooterDialog(dialog: 'about' | 'stats'): void {
+  footerMenuOpen.value = false
+  footerTrigger.value?.focus()
+  if (dialog === 'about') emit('open-about')
+  else emit('open-stats')
+}
+
+function requestClearFromMenu(): void {
+  footerMenuOpen.value = false
+  footerTrigger.value?.focus()
+  emit('request-clear')
 }
 
 watch(
@@ -109,8 +144,14 @@ watch(
   },
 )
 
-onMounted(() => document.addEventListener('keydown', onGlobalKeydown))
-onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
+onMounted(() => {
+  document.addEventListener('keydown', onGlobalKeydown)
+  document.addEventListener('pointerdown', onDocumentPointerDown)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', onGlobalKeydown)
+  document.removeEventListener('pointerdown', onDocumentPointerDown)
+})
 </script>
 
 <template>
@@ -226,22 +267,66 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
     </div>
 
     <footer class="sidebar-footer">
-      <div class="storage-row" title="数据仅保存在当前浏览器的 IndexedDB 中">
-        <span class="storage-icon"><AppIcon name="database" :size="16" /></span>
-        <div class="storage-copy">
-          <span class="storage-title">本地缓存</span>
-          <span class="storage-meta">
-            {{ store.state.conversations.length }} 个会话 · {{ store.totalMessages.value }} 条消息
-          </span>
-        </div>
+      <div class="footer-menu-wrap">
         <button
+          ref="footerTrigger"
           type="button"
-          class="clear-button"
-          :disabled="!store.hasConversations.value"
-          @click="emit('request-clear')"
+          class="storage-row"
+          :class="{ 'is-open': footerMenuOpen }"
+          :aria-expanded="footerMenuOpen"
+          title="本地缓存菜单"
+          @click="toggleFooterMenu"
         >
-          清空
+          <span class="storage-icon"><AppIcon name="database" :size="16" /></span>
+          <span class="storage-copy">
+            <span class="storage-title">本地缓存</span>
+            <span class="storage-meta">
+              {{ store.state.conversations.length }} 个会话 · {{ store.totalMessages.value }} 条消息
+            </span>
+          </span>
+          <AppIcon
+            class="storage-chevron"
+            :name="footerMenuOpen ? 'chevron-down' : 'chevron-up'"
+            :size="15"
+          />
         </button>
+
+        <Transition name="footer-menu">
+          <div
+            v-if="footerMenuOpen"
+            ref="footerMenu"
+            class="footer-menu"
+            role="group"
+            aria-label="本地缓存菜单"
+          >
+            <button
+              type="button"
+              class="footer-menu-item"
+              @click="openFooterDialog('stats')"
+            >
+              <AppIcon name="chart" :size="16" />
+              <span>数据统计</span>
+            </button>
+            <button
+              type="button"
+              class="footer-menu-item"
+              @click="openFooterDialog('about')"
+            >
+              <AppIcon name="info" :size="16" />
+              <span>关于</span>
+            </button>
+            <div class="footer-menu-divider" role="separator" />
+            <button
+              type="button"
+              class="footer-menu-item is-danger"
+              :disabled="!store.hasConversations.value"
+              @click="requestClearFromMenu"
+            >
+              <AppIcon name="trash" :size="16" />
+              <span>清空本地数据</span>
+            </button>
+          </div>
+        </Transition>
       </div>
     </footer>
   </aside>
@@ -439,10 +524,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
 }
 
 .conversation-scroll {
+  --scroll-pad-top: 18px;
   min-height: 0;
   flex: 1;
   overflow-y: auto;
-  padding: 18px 12px 12px;
+  padding: var(--scroll-pad-top) 12px 12px;
   overscroll-behavior: contain;
 }
 
@@ -452,7 +538,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
 
 .group-label {
   position: sticky;
-  top: 0;
+  /* Pull the sticky label over the scroll container's top padding. */
+  top: calc(-1 * var(--scroll-pad-top));
   z-index: 2;
   margin: 0;
   padding: 2px 10px;
@@ -503,21 +590,30 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
 }
 
 .sidebar-footer {
+  position: relative;
+  z-index: 5;
   flex: none;
   padding: 0 12px 10px;
+}
+
+.footer-menu-wrap {
+  position: relative;
 }
 
 .storage-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
   height: 44px;
   padding: 6px 8px 6px 6px;
   border-radius: 12px;
+  text-align: left;
   transition: background-color var(--transition-fast);
 }
 
-.storage-row:hover {
+.storage-row:hover,
+.storage-row.is-open {
   background: var(--bg-hover);
 }
 
@@ -555,21 +651,85 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onGlobalKeydown))
   white-space: nowrap;
 }
 
-.clear-button {
+.storage-chevron {
   flex: none;
-  padding: 4px 7px;
-  border-radius: 6px;
-  color: var(--text-tertiary);
-  font-size: 11px;
+  color: var(--text-caption);
 }
 
-.clear-button:hover:not(:disabled) {
-  background: var(--danger-soft);
+.footer-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 10;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.footer-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 9px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+}
+
+.footer-menu-item:hover {
+  background: var(--bg-hover);
+  text-decoration: none;
+}
+
+.footer-menu-item :deep(.app-icon) {
+  flex: none;
+  color: var(--text-tertiary);
+}
+
+.footer-menu-item.is-danger {
   color: var(--danger);
 }
 
-.clear-button:disabled {
-  opacity: 0.45;
+.footer-menu-item.is-danger :deep(.app-icon) {
+  color: var(--danger);
+}
+
+.footer-menu-item.is-danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
+.footer-menu-item:disabled {
+  color: var(--text-caption);
+  opacity: 0.6;
+}
+
+.footer-menu-item:disabled :deep(.app-icon) {
+  color: var(--text-caption);
+}
+
+.footer-menu-divider {
+  height: 1px;
+  margin: 5px 7px;
+  background: var(--border-subtle);
+}
+
+.footer-menu-enter-active,
+.footer-menu-leave-active {
+  transition:
+    opacity 140ms ease,
+    transform 140ms var(--ease-out);
+}
+
+.footer-menu-enter-from,
+.footer-menu-leave-to {
+  transform: translateY(4px) scale(0.985);
+  opacity: 0;
 }
 
 @media (max-width: 860px) {
