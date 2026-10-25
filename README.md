@@ -13,6 +13,8 @@
 
 A local-first, browser-only viewer for DeepSeek chat exports. Import one or more JSON files and browse, search, and organize them without sending chat data anywhere.
 
+**Live demo:** [dsv.bgzo.cc](https://dsv.bgzo.cc/) (custom domain) · [deepseek-json-viewer.lfh010618.workers.dev](https://deepseek-json-viewer.lfh010618.workers.dev/) (Workers default domain)
+
 ## Highlights
 
 - Multi-file import via file picker or drag and drop; repeated imports are de-duplicated
