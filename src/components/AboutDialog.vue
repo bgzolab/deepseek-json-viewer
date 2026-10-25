@@ -38,7 +38,7 @@ const repoUrl = 'https://github.com/bgzolab/deepseek-json-viewer'
           <span class="about-link-icon"><AppIcon name="link" :size="16" /></span>
           <span class="about-link-copy">
             <span>GitHub</span>
-            <small>github.com/bgzolab/deepseek-json-viewer</small>
+            <small>有帮到您的话，点个 🌟 鼓励一下我吧</small>
           </span>
           <AppIcon name="external" :size="14" class="about-link-arrow" />
         </a>
