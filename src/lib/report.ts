@@ -292,6 +292,7 @@ export function formatDay(timestamp: number | null): string {
 function escapeMarkdown(value: string): string {
   return value
     .replace(/\\/g, '\\\\')
+    .replace(/\r\n?/g, '\n')
     .replace(/\|/g, '\\|')
     .replace(/\n/g, ' ')
 }

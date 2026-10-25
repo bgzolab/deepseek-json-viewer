@@ -113,15 +113,15 @@ describe('computeChatReport', () => {
     expect(csv).toContain('"A, ""B"" | C"')
   })
 
-  it('escapes backslashes before pipes in markdown tables', () => {
-    const tricky = [conversation({ title: String.raw`A\|B` })]
+  it('escapes backslashes, pipes, and carriage returns in markdown tables', () => {
+    const tricky = [conversation({ title: 'A\\|B\r\nC' })]
     const markdown = buildMarkdownReport(
       computeChatStats(tricky),
       computeChatReport(tricky),
       Date.now(),
     )
 
-    expect(markdown).toContain(String.raw`A\\\|B`)
+    expect(markdown).toContain(String.raw`A\\\|B C`)
   })
 
   it('neutralizes spreadsheet formulas in csv cells', () => {
