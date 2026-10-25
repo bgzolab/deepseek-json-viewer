@@ -42,7 +42,7 @@ const repoUrl = 'https://github.com/bgzolab/deepseek-json-viewer'
           </span>
           <AppIcon name="external" :size="14" class="about-link-arrow" />
         </a>
-        <a :href="`${repoUrl}/issues`" target="_blank" rel="noopener noreferrer">
+        <a :href="`${repoUrl}/issues/new`" target="_blank" rel="noopener noreferrer">
           <span class="about-link-icon"><AppIcon name="message" :size="16" /></span>
           <span class="about-link-copy">
             <span>问题反馈</span>
