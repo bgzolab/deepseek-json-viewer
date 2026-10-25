@@ -249,7 +249,7 @@ const dayFormat = new Intl.DateTimeFormat('zh-CN', {
   day: '2-digit',
 })
 
-function formatNumber(value: number): string {
+export function formatNumber(value: number): string {
   return numberFormat.format(value)
 }
 
@@ -258,7 +258,7 @@ function formatTimestamp(timestamp: number | null): string {
   return dateTimeFormat.format(new Date(timestamp)).replace(/\//g, '-')
 }
 
-function formatDay(timestamp: number | null): string {
+export function formatDay(timestamp: number | null): string {
   if (timestamp === null || timestamp <= 0) return '—'
   return dayFormat.format(new Date(timestamp)).replace(/\//g, '-')
 }
@@ -268,7 +268,9 @@ function escapeMarkdown(value: string): string {
 }
 
 function escapeCsv(value: string | number): string {
-  const text = String(value)
+  let text = String(value)
+  // Neutralize spreadsheet formulas in user-provided text (titles, model names).
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) text = `'${text}`
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
 

@@ -86,6 +86,7 @@ function onSearchKeydown(event: KeyboardEvent): void {
 
 async function focusSearch(): Promise<void> {
   if (hasActiveModal()) return
+  footerMenuOpen.value = false
   if (window.matchMedia('(max-width: 860px)').matches) {
     store.setMobileSidebarOpen(true)
   } else if (store.state.sidebarCollapsed) {
@@ -272,7 +273,6 @@ onBeforeUnmount(() => {
           type="button"
           class="storage-row"
           :class="{ 'is-open': footerMenuOpen }"
-          aria-haspopup="menu"
           :aria-expanded="footerMenuOpen"
           title="本地缓存菜单"
           @click="toggleFooterMenu"
@@ -296,13 +296,12 @@ onBeforeUnmount(() => {
             v-if="footerMenuOpen"
             ref="footerMenu"
             class="footer-menu"
-            role="menu"
+            role="group"
             aria-label="本地缓存菜单"
           >
             <button
               type="button"
               class="footer-menu-item"
-              role="menuitem"
               @click="openFooterDialog('stats')"
             >
               <AppIcon name="chart" :size="16" />
@@ -311,7 +310,6 @@ onBeforeUnmount(() => {
             <button
               type="button"
               class="footer-menu-item"
-              role="menuitem"
               @click="openFooterDialog('about')"
             >
               <AppIcon name="info" :size="16" />
@@ -321,7 +319,6 @@ onBeforeUnmount(() => {
             <button
               type="button"
               class="footer-menu-item is-danger"
-              role="menuitem"
               :disabled="!store.hasConversations.value"
               @click="requestClearFromMenu"
             >

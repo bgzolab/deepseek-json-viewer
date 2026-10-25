@@ -191,6 +191,7 @@ function requestClear(): void {
 
 function openConversationFromStats(id: string): void {
   statsOpen.value = false
+  if (store.state.query) store.clearQuery()
   store.selectConversation(id)
 }
 

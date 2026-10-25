@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { computeChatStats } from '../lib/stats'
-import { buildCsvReport, buildMarkdownReport, computeChatReport } from '../lib/report'
+import {
+  buildCsvReport,
+  buildMarkdownReport,
+  computeChatReport,
+  formatDay,
+  formatNumber,
+} from '../lib/report'
 import { useChatStore } from '../stores/chatStore'
 import AppIcon from './AppIcon.vue'
 import ModalShell from './ModalShell.vue'
@@ -21,24 +27,8 @@ const store = useChatStore()
 const stats = computed(() => computeChatStats(store.state.conversations))
 const report = computed(() => computeChatReport(store.state.conversations))
 
-const numberFormat = new Intl.NumberFormat('zh-CN')
-const dateFormat = new Intl.DateTimeFormat('zh-CN', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-})
-
-function formatNumber(value: number): string {
-  return numberFormat.format(value)
-}
-
 function formatDecimal(value: number): string {
   return value >= 100 ? formatNumber(Math.round(value)) : value.toFixed(1)
-}
-
-function formatDate(timestamp: number | null): string {
-  if (timestamp === null) return '—'
-  return dateFormat.format(new Date(timestamp)).replace(/\//g, '-')
 }
 
 function fileDate(timestamp = Date.now()): string {
@@ -112,7 +102,7 @@ function exportCsv(): void {
           <span class="stat-label">时间跨度</span>
           <strong>{{ stats.spanDays > 0 ? `${formatNumber(stats.spanDays)} 天` : '—' }}</strong>
           <span class="stat-foot">
-            {{ formatDate(stats.earliest) }} – {{ formatDate(stats.latest) }}
+            {{ formatDay(stats.earliest) }} – {{ formatDay(stats.latest) }}
           </span>
         </div>
       </div>
@@ -148,7 +138,7 @@ function exportCsv(): void {
                 <td class="is-title">
                   <span :title="row.title || '未命名会话'">{{ row.title || '未命名会话' }}</span>
                 </td>
-                <td class="is-date">{{ formatDate(row.startedAt) }}</td>
+                <td class="is-date">{{ formatDay(row.startedAt) }}</td>
                 <td class="is-number">{{ formatNumber(row.messageCount) }}</td>
                 <td class="is-number">{{ formatNumber(row.characterCount) }}</td>
               </tr>

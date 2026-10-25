@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { ChatStats } from '../lib/stats'
-import { formatDuration, type ChatReport, type ConversationRank } from '../lib/report'
+import {
+  formatDay,
+  formatDuration,
+  formatNumber,
+  type ChatReport,
+  type ConversationRank,
+} from '../lib/report'
 import AppIcon from './AppIcon.vue'
 
 type RankMetric = 'messages' | 'characters' | 'duration'
@@ -19,27 +25,11 @@ const rankMetric = ref<RankMetric>('messages')
 const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 const hourLabels = new Set([0, 6, 12, 18, 23])
 
-const numberFormat = new Intl.NumberFormat('zh-CN')
-const dateFormat = new Intl.DateTimeFormat('zh-CN', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-})
-
 const rankTabs: Array<{ value: RankMetric; label: string }> = [
   { value: 'messages', label: '消息' },
   { value: 'characters', label: '字数' },
   { value: 'duration', label: '时长' },
 ]
-
-function formatNumber(value: number): string {
-  return numberFormat.format(value)
-}
-
-function formatDate(timestamp: number | null): string {
-  if (timestamp === null) return '—'
-  return dateFormat.format(new Date(timestamp)).replace(/\//g, '-')
-}
 
 function formatPercent(value: number, total: number): string {
   return total > 0 ? `${Math.round((value / total) * 100)}%` : '0%'
@@ -61,7 +51,7 @@ const activityCards = computed(() => {
     },
     {
       label: '最活跃一天',
-      value: formatDate(activity.peakDay?.start ?? null),
+      value: formatDay(activity.peakDay?.start ?? null),
       foot: activity.peakDay ? `${formatNumber(activity.peakDay.count)} 条消息` : '暂无数据',
     },
   ]

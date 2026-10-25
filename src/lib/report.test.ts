@@ -112,4 +112,22 @@ describe('computeChatReport', () => {
     expect(csv).toContain('会话,模型,开始时间,消息数,字数,持续时间')
     expect(csv).toContain('"A, ""B"" | C"')
   })
+
+  it('neutralizes spreadsheet formulas in csv cells', () => {
+    const dangerous = [
+      conversation({
+        id: 'formula',
+        title: '=HYPERLINK("https://example.com")',
+        model: '=1+1',
+      }),
+    ]
+    const csv = buildCsvReport(
+      computeChatStats(dangerous),
+      computeChatReport(dangerous),
+      Date.now(),
+    )
+
+    expect(csv).toContain(`"'=HYPERLINK(""https://example.com"")"`)
+    expect(csv).toContain(`,'=1+1,`)
+  })
 })
