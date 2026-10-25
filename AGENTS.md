@@ -19,6 +19,15 @@
 - Recommended verification: `npm run typecheck && npm test && npm run build`
 - There is no lint or formatter script.
 
+## Git conventions
+
+- Archive a feature branch before deleting it. Create an annotated tag at the reviewed HEAD, push it, then delete the branch:
+  `git tag -a archive/<branch> <sha> -m "archive <branch> after PR #N" && git push origin archive/<branch> && git push origin --delete <branch>`.
+  Restore later with `git switch -c <branch> archive/<branch>`. Tags keep the commits reachable, survive repository migration, and do not clutter the branch list.
+- Do not rely on GitHub's PR `Restore branch` as the only copy: it restores only the last pushed PR head, not later or unpushed commits, and GitHub documents no retention guarantee for deleted branches.
+- Keep the repository setting `delete_branch_on_merge` disabled so branch deletion is always an explicit, archive-first action.
+- Squash merge is the only enabled merge method; the merged `main` commit intentionally differs from the feature branch history.
+
 ## Architecture and data flow
 
 - `src/main.ts` mounts `App.vue`. `ChatView.vue` contains the header/thread/composer; `AppSidebar.vue` owns the conversation list and search UI.
