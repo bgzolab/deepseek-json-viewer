@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Conversation } from '../types/chat'
-import { computeChatStats, countCharacters } from './stats'
+import { computeChatStats, computeChatTimeline, countCharacters } from './stats'
 
 function conversation(overrides: Partial<Conversation> = {}): Conversation {
   return {
@@ -66,5 +66,72 @@ describe('computeChatStats', () => {
   it('ignores whitespace when counting characters', () => {
     expect(countCharacters(' a b\nc ')).toBe(3)
     expect(countCharacters(undefined)).toBe(0)
+  })
+})
+
+describe('computeChatTimeline', () => {
+  it('groups messages by day and splits user and assistant values', () => {
+    const dayOne = new Date(2026, 0, 1, 12).toISOString()
+    const dayTwo = new Date(2026, 0, 2, 12).toISOString()
+    const timeline = computeChatTimeline([
+      conversation({
+        messages: [
+          { id: 'm1', role: 'user', content: '你好', createdAt: dayOne },
+          { id: 'm2', role: 'assistant', content: 'hello', createdAt: dayOne },
+          { id: 'm3', role: 'user', content: 'follow', createdAt: dayTwo },
+          { id: 'm4', role: 'system', content: 'ignored', createdAt: dayTwo },
+        ],
+      }),
+    ])
+
+    expect(timeline.granularity).toBe('day')
+    expect(timeline.buckets).toHaveLength(2)
+    expect(timeline.buckets[0]).toMatchObject({
+      userMessages: 1,
+      assistantMessages: 1,
+      userCharacters: 2,
+      assistantCharacters: 5,
+    })
+    expect(timeline.buckets[1]).toMatchObject({
+      userMessages: 1,
+      assistantMessages: 0,
+      userCharacters: 6,
+      assistantCharacters: 0,
+    })
+  })
+
+  it('skips messages without a timestamp', () => {
+    const timeline = computeChatTimeline([
+      conversation({
+        createdAt: '2026-01-01T00:00:00.000Z',
+        messages: [{ id: 'm1', role: 'user', content: 'no time' }],
+      }),
+    ])
+
+    expect(timeline.buckets).toEqual([])
+  })
+
+  it('switches to weekly buckets for longer ranges', () => {
+    const timeline = computeChatTimeline([
+      conversation({
+        messages: [
+          {
+            id: 'm1',
+            role: 'user',
+            content: 'start',
+            createdAt: new Date(2026, 0, 1, 12).toISOString(),
+          },
+          {
+            id: 'm2',
+            role: 'assistant',
+            content: 'end',
+            createdAt: new Date(2026, 4, 1, 12).toISOString(),
+          },
+        ],
+      }),
+    ])
+
+    expect(timeline.granularity).toBe('week')
+    expect(timeline.buckets.length).toBeGreaterThan(10)
   })
 })

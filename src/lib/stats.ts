@@ -110,3 +110,123 @@ export function computeChatStats(conversations: readonly Conversation[]): ChatSt
     messagesPerDay: spanDays > 0 ? messageCount / spanDays : 0,
   }
 }
+
+export type TimelineGranularity = 'day' | 'week' | 'month'
+
+export interface TimelineBucket {
+  start: number
+  end: number
+  label: string
+  userMessages: number
+  assistantMessages: number
+  userCharacters: number
+  assistantCharacters: number
+}
+
+export interface ChatTimeline {
+  granularity: TimelineGranularity
+  buckets: TimelineBucket[]
+}
+
+function startOfBucket(timestamp: number, granularity: TimelineGranularity): number {
+  const date = new Date(timestamp)
+  if (granularity === 'month') {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getTime()
+  }
+  if (granularity === 'week') {
+    const mondayOffset = (date.getDay() + 6) % 7
+    return new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() - mondayOffset,
+    ).getTime()
+  }
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+}
+
+function nextBucketStart(start: number, granularity: TimelineGranularity): number {
+  const date = new Date(start)
+  if (granularity === 'month') {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 1).getTime()
+  }
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate() + (granularity === 'week' ? 7 : 1),
+  ).getTime()
+}
+
+function bucketLabel(start: number, granularity: TimelineGranularity): string {
+  const date = new Date(start)
+  if (granularity === 'month') {
+    return `${date.getFullYear()}/${date.getMonth() + 1}`
+  }
+  return `${date.getMonth() + 1}/${date.getDate()}`
+}
+
+function timelineGranularity(spanDays: number): TimelineGranularity {
+  if (spanDays <= 90) return 'day'
+  if (spanDays <= 730) return 'week'
+  return 'month'
+}
+
+/** Builds a message-count and character timeline for the trend chart. */
+export function computeChatTimeline(conversations: readonly Conversation[]): ChatTimeline {
+  const points: Array<{ timestamp: number; role: 'user' | 'assistant'; characters: number }> = []
+
+  for (const conversation of conversations) {
+    for (const message of conversation.messages) {
+      if (message.role !== 'user' && message.role !== 'assistant') continue
+      const timestamp = toTime(message.createdAt)
+      if (timestamp === null) continue
+      points.push({
+        timestamp,
+        role: message.role,
+        characters: countCharacters(message.content) + countCharacters(message.reasoning),
+      })
+    }
+  }
+
+  if (points.length === 0) return { granularity: 'day', buckets: [] }
+
+  let earliest = points[0]!.timestamp
+  let latest = earliest
+  for (const point of points) {
+    if (point.timestamp < earliest) earliest = point.timestamp
+    if (point.timestamp > latest) latest = point.timestamp
+  }
+
+  const granularity = timelineGranularity((latest - earliest) / DAY_MS)
+  const lastBucket = startOfBucket(latest, granularity)
+  const buckets = new Map<number, TimelineBucket>()
+
+  for (
+    let start = startOfBucket(earliest, granularity);
+    start <= lastBucket;
+    start = nextBucketStart(start, granularity)
+  ) {
+    buckets.set(start, {
+      start,
+      end: nextBucketStart(start, granularity) - 1,
+      label: bucketLabel(start, granularity),
+      userMessages: 0,
+      assistantMessages: 0,
+      userCharacters: 0,
+      assistantCharacters: 0,
+    })
+  }
+
+  for (const point of points) {
+    const bucket = buckets.get(startOfBucket(point.timestamp, granularity))
+    if (!bucket) continue
+    if (point.role === 'user') {
+      bucket.userMessages += 1
+      bucket.userCharacters += point.characters
+    } else {
+      bucket.assistantMessages += 1
+      bucket.assistantCharacters += point.characters
+    }
+  }
+
+  return { granularity, buckets: [...buckets.values()] }
+}
