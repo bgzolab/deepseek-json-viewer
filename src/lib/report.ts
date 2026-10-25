@@ -253,6 +253,10 @@ export function formatNumber(value: number): string {
   return numberFormat.format(value)
 }
 
+export function formatDecimal(value: number): string {
+  return value >= 100 ? formatNumber(Math.round(value)) : value.toFixed(1)
+}
+
 function formatTimestamp(timestamp: number | null): string {
   if (timestamp === null || timestamp <= 0) return '—'
   return dateTimeFormat.format(new Date(timestamp)).replace(/\//g, '-')
@@ -313,7 +317,7 @@ export function buildMarkdownReport(
     `| 字数 | ${formatNumber(stats.characterCount)}（含推理） |`,
     `| 时间跨度 | ${stats.spanDays > 0 ? `${formatNumber(stats.spanDays)} 天（${formatDay(stats.earliest)} – ${formatDay(stats.latest)}）` : '—'} |`,
     '',
-    `平均每会话 ${stats.averageMessagesPerConversation.toFixed(1)} 条消息 · 日均 ${stats.messagesPerDay.toFixed(1)} 条 · 平均每条 ${formatNumber(Math.round(stats.averageCharactersPerMessage))} 字`,
+    `平均每会话 ${formatDecimal(stats.averageMessagesPerConversation)} 条消息 · 日均 ${formatDecimal(stats.messagesPerDay)} 条 · 平均每条 ${formatNumber(Math.round(stats.averageCharactersPerMessage))} 字`,
     '',
     '## 活跃度',
     '',
@@ -325,7 +329,7 @@ export function buildMarkdownReport(
     '',
     `- 我平均每条提问：${formatNumber(Math.round(averageQuestion))} 字`,
     `- DeepSeek 平均每条回复：${formatNumber(Math.round(averageAnswer))} 字（正文，不含推理）`,
-    `- 回复 / 提问：${responseRatio > 0 ? `${responseRatio.toFixed(1)} 倍` : '—'}`,
+    `- 回复 / 提问：${responseRatio > 0 ? `${formatDecimal(responseRatio)} 倍` : '—'}`,
     '',
     '## 会话长度分布',
     '',
@@ -346,7 +350,7 @@ export function buildMarkdownReport(
     '',
     '## 内容构成',
     '',
-    `- 带推理回复：${formatNumber(content.reasoningMessages)} / ${formatNumber(content.assistantMessages)}（${reasoningShare.toFixed(1)}%）`,
+    `- 带推理回复：${formatNumber(content.reasoningMessages)} / ${formatNumber(content.assistantMessages)}（${formatDecimal(reasoningShare)}%）`,
     `- 推理字数：${formatNumber(content.reasoningCharacters)}`,
     `- 引用来源：${formatNumber(content.references)}（${formatNumber(content.referenceMessages)} 条消息）`,
     `- 附件：${formatNumber(content.attachments)}（${formatNumber(content.attachmentMessages)} 条消息）`,
@@ -373,7 +377,7 @@ export function buildMarkdownReport(
   lines.push('## 会话明细', '', '| 会话 | 模型 | 时间 | 消息 | 字数 | 持续 |', '| --- | --- | --- | --- | --- | --- |')
   for (const row of report.conversations) {
     lines.push(
-      `| ${escapeMarkdown(row.title || '未命名会话')} | ${escapeMarkdown(row.model)} | ${formatTimestamp(row.startedAt)} | ${formatNumber(row.messages)} | ${formatNumber(row.characters)} | ${formatDuration(row.durationMs)} |`,
+      `| ${escapeMarkdown(row.title || '未命名会话')} | ${escapeMarkdown(row.model)} | ${formatDay(row.startedAt)} | ${formatNumber(row.messages)} | ${formatNumber(row.characters)} | ${formatDuration(row.durationMs)} |`,
     )
   }
 
@@ -401,6 +405,29 @@ export function buildCsvReport(
     ['我平均每条提问字数', Math.round(averageQuestion)],
     ['DeepSeek 平均每条回复字数', Math.round(averageAnswer)],
     [],
+    ['会话长度分布'],
+    ['长度', '会话数'],
+    ...report.lengthDistribution.map((bucket) => [bucket.label, bucket.count]),
+    [],
+    ['模型分布'],
+    ['模型', '会话数', '消息数', '字数'],
+    ...report.models.map((model) => [
+      model.model,
+      model.conversations,
+      model.messages,
+      model.characters,
+    ]),
+    [],
+    ['内容构成'],
+    ['项目', '数值'],
+    ['带推理回复', `${content.reasoningMessages} / ${content.assistantMessages}`],
+    ['推理字数', content.reasoningCharacters],
+    ['引用来源', content.references],
+    ['引用消息数', content.referenceMessages],
+    ['附件', content.attachments],
+    ['附件消息数', content.attachmentMessages],
+    [],
+    ['会话明细'],
     ['会话', '模型', '开始时间', '消息数', '字数', '持续时间'],
   ]
 
@@ -408,7 +435,7 @@ export function buildCsvReport(
     rows.push([
       row.title || '未命名会话',
       row.model,
-      formatTimestamp(row.startedAt),
+      formatDay(row.startedAt),
       row.messages,
       row.characters,
       formatDuration(row.durationMs),

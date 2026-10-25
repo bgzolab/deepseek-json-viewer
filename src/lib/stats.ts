@@ -2,6 +2,9 @@ import type { Conversation } from '../types/chat'
 import { effectiveConversationTime, toTime } from './time'
 
 const DAY_MS = 86_400_000
+// Ignore impossible chat timestamps so a single bad row cannot build a huge timeline.
+const MIN_TIMELINE_TIMESTAMP = 0
+const MAX_TIMELINE_TIMESTAMP = Date.UTC(2100, 0, 1)
 
 export interface ConversationStat {
   id: string
@@ -52,6 +55,7 @@ export function computeChatStats(conversations: readonly Conversation[]): ChatSt
     let rowUserMessages = 0
     let rowAssistantMessages = 0
     let rowCharacters = 0
+    let firstMessageTime: number | null = null
 
     for (const message of conversation.messages) {
       rowMessages += 1
@@ -59,9 +63,14 @@ export function computeChatStats(conversations: readonly Conversation[]): ChatSt
       if (message.role === 'assistant') rowAssistantMessages += 1
       rowCharacters +=
         countCharacters(message.content) + countCharacters(message.reasoning)
+      const messageTime = toTime(message.createdAt)
+      if (messageTime !== null) {
+        firstMessageTime =
+          firstMessageTime === null ? messageTime : Math.min(firstMessageTime, messageTime)
+      }
     }
 
-    const startedAt = conversationStartedAt(conversation)
+    const startedAt = firstMessageTime ?? conversationStartedAt(conversation)
     const activity = effectiveConversationTime(conversation)
 
     if (startedAt > 0) {
@@ -182,6 +191,7 @@ export function computeChatTimeline(
       if (message.role !== 'user' && message.role !== 'assistant') continue
       const timestamp = toTime(message.createdAt)
       if (timestamp === null) continue
+      if (timestamp < MIN_TIMELINE_TIMESTAMP || timestamp >= MAX_TIMELINE_TIMESTAMP) continue
       points.push({
         timestamp,
         role: message.role,

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { Conversation } from '../types/chat'
+import { formatDay, formatNumber } from '../lib/report'
 import { computeChatTimeline, type TimelineBucket } from '../lib/stats'
 
 type Metric = 'messages' | 'characters'
@@ -25,15 +26,9 @@ const TOP = 12
 const BOTTOM = 30
 const PLOT_HEIGHT = HEIGHT - TOP - BOTTOM
 
-const numberFormat = new Intl.NumberFormat('zh-CN')
 const compactFormat = new Intl.NumberFormat('zh-CN', {
   notation: 'compact',
   maximumFractionDigits: 1,
-})
-const fullDateFormat = new Intl.DateTimeFormat('zh-CN', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
 })
 
 const timeline = computed(() =>
@@ -43,14 +38,6 @@ const timeline = computed(() =>
 const granularityLabel = computed(
   () => ({ day: '按天', week: '按周', month: '按月' })[timeline.value.granularity],
 )
-
-function formatNumber(value: number): string {
-  return numberFormat.format(value)
-}
-
-function formatDate(timestamp: number): string {
-  return fullDateFormat.format(new Date(timestamp)).replace(/\//g, '-')
-}
 
 function formatAxis(value: number): string {
   return value >= 10_000 ? compactFormat.format(value) : formatNumber(value)
@@ -69,9 +56,9 @@ function bucketRange(bucket: TimelineBucket): string {
     return `${date.getFullYear()}年${date.getMonth() + 1}月`
   }
   if (timeline.value.granularity === 'week') {
-    return `${formatDate(bucket.start)} – ${formatDate(bucket.end)}`
+    return `${formatDay(bucket.start)} – ${formatDay(bucket.end)}`
   }
-  return formatDate(bucket.start)
+  return formatDay(bucket.start)
 }
 
 function bucketTooltip(bucket: TimelineBucket): string {
@@ -117,10 +104,13 @@ const chart = computed(() => {
   }
 
   const plotWidth = chartWidth.value - LEFT - RIGHT
-  const values = isMessages
-    ? rows.map((row) => row.total)
-    : rows.flatMap((row) => [row.user, row.assistant])
-  const maxValue = Math.max(4, ...values)
+  let maxValue = 4
+  for (const row of rows) {
+    maxValue = Math.max(
+      maxValue,
+      isMessages ? row.total : Math.max(row.user, row.assistant),
+    )
+  }
   const step = niceStep(maxValue / 4)
   const yMax = step * 4
   const groupWidth = plotWidth / rows.length

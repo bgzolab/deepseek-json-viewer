@@ -6,6 +6,7 @@ import {
   buildMarkdownReport,
   computeChatReport,
   formatDay,
+  formatDecimal,
   formatNumber,
 } from '../lib/report'
 import { useChatStore } from '../stores/chatStore'
@@ -26,10 +27,6 @@ const emit = defineEmits<{
 const store = useChatStore()
 const stats = computed(() => computeChatStats(store.state.conversations))
 const report = computed(() => computeChatReport(store.state.conversations))
-
-function formatDecimal(value: number): string {
-  return value >= 100 ? formatNumber(Math.round(value)) : value.toFixed(1)
-}
 
 function fileDate(timestamp = Date.now()): string {
   const date = new Date(timestamp)

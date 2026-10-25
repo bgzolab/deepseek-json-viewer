@@ -67,6 +67,26 @@ describe('computeChatStats', () => {
     expect(countCharacters(' a b\nc ')).toBe(3)
     expect(countCharacters(undefined)).toBe(0)
   })
+
+  it('uses the first message time as the conversation start', () => {
+    const stats = computeChatStats([
+      conversation({
+        createdAt: '2026-01-01T00:00:00.000Z',
+        messages: [
+          {
+            id: 'm1',
+            role: 'user',
+            content: 'hi',
+            createdAt: '2026-01-05T12:00:00.000Z',
+          },
+        ],
+      }),
+    ])
+
+    expect(stats.conversations[0]?.startedAt).toBe(
+      Date.parse('2026-01-05T12:00:00.000Z'),
+    )
+  })
 })
 
 describe('computeChatTimeline', () => {
@@ -166,5 +186,36 @@ describe('computeChatTimeline', () => {
         0,
       ),
     ).toBe(1)
+  })
+
+  it('ignores timestamps outside the supported window', () => {
+    const timeline = computeChatTimeline([
+      conversation({
+        messages: [
+          {
+            id: 'm1',
+            role: 'user',
+            content: 'valid',
+            createdAt: new Date(2026, 0, 1, 12).toISOString(),
+          },
+          {
+            id: 'm2',
+            role: 'assistant',
+            content: 'future',
+            createdAt: '9999-12-31T23:59:59.000Z',
+          },
+          {
+            id: 'm3',
+            role: 'user',
+            content: 'past',
+            createdAt: '0001-01-01T00:00:00.000Z',
+          },
+        ],
+      }),
+    ])
+
+    expect(timeline.buckets).toHaveLength(1)
+    expect(timeline.buckets[0]?.userMessages).toBe(1)
+    expect(timeline.buckets[0]?.assistantMessages).toBe(0)
   })
 })

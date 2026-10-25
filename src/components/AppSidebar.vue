@@ -524,10 +524,11 @@ onBeforeUnmount(() => {
 }
 
 .conversation-scroll {
+  --scroll-pad-top: 18px;
   min-height: 0;
   flex: 1;
   overflow-y: auto;
-  padding: 18px 12px 12px;
+  padding: var(--scroll-pad-top) 12px 12px;
   overscroll-behavior: contain;
 }
 
@@ -537,8 +538,8 @@ onBeforeUnmount(() => {
 
 .group-label {
   position: sticky;
-  /* Pull the sticky label over the scroll container's 18px top padding. */
-  top: -18px;
+  /* Pull the sticky label over the scroll container's top padding. */
+  top: calc(-1 * var(--scroll-pad-top));
   z-index: 2;
   margin: 0;
   padding: 2px 10px;
