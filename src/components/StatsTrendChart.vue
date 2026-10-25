@@ -241,91 +241,104 @@ onBeforeUnmount(() => observer?.disconnect())
       <span class="trend-note">按消息时间统计</span>
     </div>
 
-    <div v-if="chart.rows.length > 0" class="chart-scroll">
-      <svg
-        class="trend-chart"
-        :viewBox="`0 0 ${chart.width} ${HEIGHT}`"
-        :width="chart.width"
-        :height="HEIGHT"
-        role="img"
-        :aria-label="
-          metric === 'messages'
-            ? `${granularityLabel}消息频次趋势`
-            : `${granularityLabel}我和 DeepSeek 对话字数趋势`
-        "
-      >
-        <g class="grid">
-          <template v-for="tick in chart.yTicks" :key="tick.value">
-            <line :x1="LEFT" :x2="chart.width - RIGHT" :y1="tick.y" :y2="tick.y" />
-            <text :x="LEFT - 7" :y="tick.y + 3" text-anchor="end">
-              {{ formatAxis(tick.value) }}
+    <div v-if="chart.rows.length > 0" class="chart-area">
+      <div class="y-axis" aria-hidden="true">
+        <span
+          v-for="tick in chart.yTicks"
+          :key="tick.value"
+          :style="{ top: `${tick.y}px` }"
+        >
+          {{ formatAxis(tick.value) }}
+        </span>
+      </div>
+      <div class="chart-scroll">
+        <svg
+          class="trend-chart"
+          :viewBox="`0 0 ${chart.width} ${HEIGHT}`"
+          :width="chart.width"
+          :height="HEIGHT"
+          role="img"
+          :aria-label="
+            metric === 'messages'
+              ? `${granularityLabel}消息频次趋势`
+              : `${granularityLabel}我和 DeepSeek 对话字数趋势`
+          "
+        >
+          <g class="grid">
+            <template v-for="tick in chart.yTicks" :key="tick.value">
+              <line
+                :x1="LEFT"
+                :x2="chart.width - RIGHT"
+                :y1="tick.y"
+                :y2="tick.y"
+              />
+            </template>
+          </g>
+
+          <g v-if="metric === 'messages'" class="bars">
+            <rect
+              v-for="bar in chart.bars"
+              :key="bar.key"
+              class="bar is-total"
+              :x="bar.totalX"
+              :y="bar.totalY"
+              :width="chart.totalBarWidth"
+              :height="bar.totalHeight"
+              :rx="bar.radius"
+            />
+          </g>
+          <g v-else class="bars">
+            <rect
+              v-for="bar in chart.bars"
+              v-show="showUser"
+              :key="`user-${bar.key}`"
+              class="bar is-user"
+              :x="bar.userX"
+              :y="bar.userY"
+              :width="chart.barWidth"
+              :height="bar.userHeight"
+              :rx="bar.radius"
+            />
+            <rect
+              v-for="bar in chart.bars"
+              v-show="showAssistant"
+              :key="`assistant-${bar.key}`"
+              class="bar is-assistant"
+              :x="bar.assistantX"
+              :y="bar.assistantY"
+              :width="chart.barWidth"
+              :height="bar.assistantHeight"
+              :rx="bar.radius"
+            />
+          </g>
+
+          <g class="axis">
+            <text
+              v-for="tick in chart.xTicks"
+              :key="tick.key"
+              :x="tick.x"
+              :y="HEIGHT - 9"
+              :text-anchor="tick.anchor"
+            >
+              {{ tick.label }}
             </text>
-          </template>
-        </g>
+          </g>
 
-        <g v-if="metric === 'messages'" class="bars">
-          <rect
-            v-for="bar in chart.bars"
-            :key="bar.key"
-            class="bar is-total"
-            :x="bar.totalX"
-            :y="bar.totalY"
-            :width="chart.totalBarWidth"
-            :height="bar.totalHeight"
-            :rx="bar.radius"
-          />
-        </g>
-        <g v-else class="bars">
-          <rect
-            v-for="bar in chart.bars"
-            v-show="showUser"
-            :key="`user-${bar.key}`"
-            class="bar is-user"
-            :x="bar.userX"
-            :y="bar.userY"
-            :width="chart.barWidth"
-            :height="bar.userHeight"
-            :rx="bar.radius"
-          />
-          <rect
-            v-for="bar in chart.bars"
-            v-show="showAssistant"
-            :key="`assistant-${bar.key}`"
-            class="bar is-assistant"
-            :x="bar.assistantX"
-            :y="bar.assistantY"
-            :width="chart.barWidth"
-            :height="bar.assistantHeight"
-            :rx="bar.radius"
-          />
-        </g>
-
-        <g class="axis">
-          <text
-            v-for="tick in chart.xTicks"
-            :key="tick.key"
-            :x="tick.x"
-            :y="HEIGHT - 9"
-            :text-anchor="tick.anchor"
-          >
-            {{ tick.label }}
-          </text>
-        </g>
-
-        <g class="hits">
-          <rect
-            v-for="bar in chart.bars"
-            :key="`hit-${bar.key}`"
-            :x="bar.hitX"
-            :y="TOP"
-            :width="bar.hitWidth"
-            :height="PLOT_HEIGHT"
-            fill="transparent"
-          >
-            <title>{{ bar.tooltip }}</title>
-          </rect>
-        </g>
-      </svg>
+          <g class="hits">
+            <rect
+              v-for="bar in chart.bars"
+              :key="`hit-${bar.key}`"
+              :x="bar.hitX"
+              :y="TOP"
+              :width="bar.hitWidth"
+              :height="PLOT_HEIGHT"
+              fill="transparent"
+            >
+              <title>{{ bar.tooltip }}</title>
+            </rect>
+          </g>
+        </svg>
+      </div>
     </div>
 
     <p v-else class="trend-empty">没有带时间戳的消息，无法绘制趋势。</p>
@@ -461,8 +474,33 @@ onBeforeUnmount(() => observer?.disconnect())
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
+.chart-area {
+  position: relative;
+}
+
 .chart-scroll {
   overflow-x: auto;
+}
+
+.y-axis {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 44px;
+  height: 230px;
+  background: var(--bg-surface);
+  pointer-events: none;
+}
+
+.y-axis span {
+  position: absolute;
+  right: 7px;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  line-height: 1;
+  transform: translateY(-50%);
+  font-variant-numeric: tabular-nums;
 }
 
 .trend-chart {

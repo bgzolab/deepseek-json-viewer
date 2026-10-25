@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import type { ChatStats } from '../lib/stats'
 import {
   formatDay,
+  formatDecimal,
   formatDuration,
   formatNumber,
   type ChatReport,
@@ -276,7 +277,7 @@ const contentCards = computed(() => {
         <p class="card-note">
           {{
             qa.ratio > 0
-              ? `平均回复约为提问的 ${qa.ratio.toFixed(1)} 倍`
+              ? `平均回复约为提问的 ${formatDecimal(qa.ratio)} 倍`
               : '还没有足够的问答数据'
           }}
         </p>
