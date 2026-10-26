@@ -19,14 +19,20 @@ const BOTTOM_THRESHOLD = 96
 
 const scrollEl = ref<HTMLElement | null>(null)
 const windowStart = ref(0)
+const windowEnd = ref(props.conversation.messages.length)
 const atBottom = ref(true)
 
 const indexedMessages = computed(() =>
   props.conversation.messages.map((message, index) => ({ message, index })),
 )
 
-const visibleMessages = computed(() => indexedMessages.value.slice(windowStart.value))
+const visibleMessages = computed(() =>
+  indexedMessages.value.slice(windowStart.value, windowEnd.value),
+)
 const hiddenCount = computed(() => windowStart.value)
+const laterCount = computed(() =>
+  Math.max(0, props.conversation.messages.length - windowEnd.value),
+)
 const isEmpty = computed(() => props.conversation.messages.length === 0)
 const navItems = computed(() => buildScrollNavItems(props.conversation.messages))
 const navItemByIndex = computed(
@@ -34,12 +40,18 @@ const navItemByIndex = computed(
 )
 const activeNavId = ref('')
 const navMediaQuery = window.matchMedia('(min-width: 768px)')
+const navHoverQuery = window.matchMedia('(hover: hover)')
 
 let activeFrame = 0
 
 function updateActiveNav(): void {
   const element = scrollEl.value
-  if (!element || !navMediaQuery.matches || navItems.value.length < 2) {
+  if (
+    !element ||
+    !navMediaQuery.matches ||
+    !navHoverQuery.matches ||
+    navItems.value.length < 2
+  ) {
     activeNavId.value = ''
     return
   }
@@ -60,6 +72,17 @@ function updateActiveNav(): void {
 
 function resetWindow(): void {
   windowStart.value = Math.max(0, props.conversation.messages.length - INITIAL_WINDOW)
+  windowEnd.value = props.conversation.messages.length
+}
+
+async function ensureMessageWindow(index: number): Promise<void> {
+  if (index >= windowStart.value && index < windowEnd.value) return
+  windowStart.value = Math.max(0, index - 16)
+  windowEnd.value = Math.min(
+    props.conversation.messages.length,
+    windowStart.value + INITIAL_WINDOW,
+  )
+  await nextTick()
 }
 
 async function scrollToBottom(behavior: ScrollBehavior = 'smooth'): Promise<void> {
@@ -83,6 +106,15 @@ async function loadEarlier(): Promise<void> {
   updateActiveNav()
 }
 
+async function loadLater(): Promise<void> {
+  windowEnd.value = Math.min(
+    props.conversation.messages.length,
+    windowEnd.value + LOAD_CHUNK,
+  )
+  await nextTick()
+  updateActiveNav()
+}
+
 function onScroll(): void {
   const element = scrollEl.value
   if (!element) return
@@ -100,10 +132,7 @@ async function jumpToMessage(index: number): Promise<void> {
   const element = scrollEl.value
   if (!element) return
 
-  if (index < windowStart.value) {
-    windowStart.value = Math.max(0, index - 16)
-    await nextTick()
-  }
+  await ensureMessageWindow(index)
 
   const target = element.querySelector<HTMLElement>(`[data-message-index="${index}"]`)
   if (!target) return
@@ -130,8 +159,8 @@ async function focusMatch(matchIndex: number, messageId: string): Promise<void> 
     (message) => message.id === messageId,
   )
 
-  if (messageIndex >= 0 && messageIndex < windowStart.value) {
-    windowStart.value = Math.max(0, messageIndex - 16)
+  if (messageIndex >= 0) {
+    await ensureMessageWindow(messageIndex)
   }
 
   await nextTick()
@@ -179,8 +208,12 @@ watch(
 watch(
   () => props.conversation.messages.length,
   async (length, previousLength) => {
-    if (length > previousLength && atBottom.value) {
-      await scrollToBottom('auto')
+    if (length > previousLength) {
+      if (windowEnd.value === previousLength) windowEnd.value = length
+      if (atBottom.value) await scrollToBottom('auto')
+    } else if (length < previousLength) {
+      windowStart.value = Math.min(windowStart.value, length)
+      windowEnd.value = Math.min(windowEnd.value, length)
     }
     updateActiveNav()
   },
@@ -200,10 +233,12 @@ onMounted(async () => {
   }
   updateActiveNav()
   navMediaQuery.addEventListener('change', updateActiveNav)
+  navHoverQuery.addEventListener('change', updateActiveNav)
 })
 
 onBeforeUnmount(() => {
   navMediaQuery.removeEventListener('change', updateActiveNav)
+  navHoverQuery.removeEventListener('change', updateActiveNav)
   if (activeFrame) window.cancelAnimationFrame(activeFrame)
 })
 
@@ -237,6 +272,15 @@ defineExpose({ scrollToBottom, focusMatch })
             :query="query"
             :search-start-index="messageOffset(item.message.id)"
           />
+
+          <button
+            v-if="laterCount > 0"
+            type="button"
+            class="load-later"
+            @click="loadLater"
+          >
+            {{ t('messages.loadLater', { count: Math.min(laterCount, LOAD_CHUNK) }) }}
+          </button>
         </template>
       </div>
     </div>
@@ -284,9 +328,9 @@ defineExpose({ scrollToBottom, focusMatch })
   padding: 34px var(--content-gutter) 28px;
 }
 
-.load-earlier {
+.load-earlier,
+.load-later {
   display: block;
-  margin: 0 auto 24px;
   padding: 4px 8px;
   border-radius: 6px;
   color: var(--text-tertiary);
@@ -297,7 +341,16 @@ defineExpose({ scrollToBottom, focusMatch })
     color var(--transition-fast);
 }
 
-.load-earlier:hover {
+.load-earlier {
+  margin: 0 auto 24px;
+}
+
+.load-later {
+  margin: 24px auto 0;
+}
+
+.load-earlier:hover,
+.load-later:hover {
   background: var(--bg-hover);
   color: var(--text-secondary);
 }

@@ -116,6 +116,10 @@ export const en = {
     one: 'Load {count} earlier message',
     other: 'Load {count} earlier messages',
   },
+  'messages.loadLater': {
+    one: 'Load {count} later message',
+    other: 'Load {count} later messages',
+  },
   'messages.scrollBottom': 'Scroll to bottom',
 
   'markdown.copy': 'Copy',

@@ -105,6 +105,7 @@ export const zhCN = {
   'messages.emptyTitle': '这个会话没有可展示的消息',
   'messages.emptyBody': '可能是导出时消息为空，或该会话只包含暂不支持的内容。',
   'messages.loadEarlier': '加载更早的 {count} 条消息',
+  'messages.loadLater': '加载更晚的 {count} 条消息',
   'messages.scrollBottom': '滚动到底部',
 
   'markdown.copy': '复制',
