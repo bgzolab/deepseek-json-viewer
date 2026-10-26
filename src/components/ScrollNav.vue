@@ -202,7 +202,7 @@ function itemTitle(item: ScrollNavItem): string {
   transform: scale(1.5);
 }
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (hover: none) {
   .scroll-nav {
     display: none;
   }

@@ -199,9 +199,11 @@ onMounted(async () => {
     await scrollToBottom('auto')
   }
   updateActiveNav()
+  navMediaQuery.addEventListener('change', updateActiveNav)
 })
 
 onBeforeUnmount(() => {
+  navMediaQuery.removeEventListener('change', updateActiveNav)
   if (activeFrame) window.cancelAnimationFrame(activeFrame)
 })
 
@@ -370,6 +372,12 @@ defineExpose({ scrollToBottom, focusMatch })
 @media (max-width: 640px) {
   .message-stream {
     padding: 20px 14px 22px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1140px) {
+  .message-stream {
+    padding-right: 64px;
   }
 }
 </style>
