@@ -49,6 +49,12 @@ function onItemKeydown(event: KeyboardEvent): void {
   event.preventDefault()
   buttons[nextScrollNavIndex(buttons.length, current, event.key)]?.focus()
 }
+
+function onListFocusout(event: FocusEvent): void {
+  if (!listEl.value?.contains(event.relatedTarget as Node | null)) {
+    focusedId.value = ''
+  }
+}
 </script>
 
 <template>
@@ -59,7 +65,7 @@ function onItemKeydown(event: KeyboardEvent): void {
   >
     <div class="scroll-nav-bg" aria-hidden="true" />
     <div class="scroll-nav-panel">
-      <div ref="listEl" class="scroll-nav-list">
+      <div ref="listEl" class="scroll-nav-list" @focusout="onListFocusout">
         <button
           v-for="item in items"
           :key="item.id"

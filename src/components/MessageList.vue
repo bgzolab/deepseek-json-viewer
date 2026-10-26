@@ -82,21 +82,28 @@ function resetWindow(): void {
 
 async function ensureMessageWindow(index: number): Promise<void> {
   if (index >= windowStart.value && index < windowEnd.value) return
-  const window = centeredScrollWindow(
+  const nextWindow = centeredScrollWindow(
     props.conversation.messages.length,
     index,
     INITIAL_WINDOW,
   )
-  windowStart.value = window.start
-  windowEnd.value = window.end
+  windowStart.value = nextWindow.start
+  windowEnd.value = nextWindow.end
   await nextTick()
+}
+
+function scrollBehavior(behavior: ScrollBehavior): ScrollBehavior {
+  return behavior === 'smooth' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ? 'auto'
+    : behavior
 }
 
 async function scrollToBottom(behavior: ScrollBehavior = 'smooth'): Promise<void> {
   await nextTick()
   const element = scrollEl.value
   if (!element) return
-  element.scrollTo({ top: element.scrollHeight, behavior })
+  element.scrollTo({ top: element.scrollHeight, behavior: scrollBehavior(behavior) })
   atBottom.value = true
   updateActiveNav()
 }
@@ -154,7 +161,7 @@ async function jumpToMessage(index: number): Promise<void> {
 
   const targetTop =
     target.getBoundingClientRect().top - element.getBoundingClientRect().top + element.scrollTop
-  element.scrollTo({ top: Math.max(0, targetTop - 12), behavior: 'smooth' })
+  element.scrollTo({ top: Math.max(0, targetTop - 12), behavior: scrollBehavior('smooth') })
 }
 
 function centerElementInScrollContainer(container: HTMLElement, target: HTMLElement): void {
