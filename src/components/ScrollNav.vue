@@ -103,7 +103,7 @@ function itemTitle(item: ScrollNavItem): string {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: max-content;
+  width: fit-content;
   max-width: min(480px, calc(100vw - 80px));
   max-height: 100%;
   overflow: hidden;
@@ -146,9 +146,9 @@ function itemTitle(item: ScrollNavItem): string {
   justify-content: flex-end;
   width: calc(100% - 6px);
   min-width: 0;
-  min-height: 30px;
+  height: 30px;
   margin-right: 8px;
-  padding: 4px 0;
+  padding: 0;
   color: var(--text-tertiary);
   line-height: 20px;
   cursor: pointer;
@@ -157,11 +157,11 @@ function itemTitle(item: ScrollNavItem): string {
 .scroll-nav-title {
   min-width: 0;
   margin-right: 12px;
-  overflow-wrap: anywhere;
+  overflow: hidden;
   font-size: 13px;
   line-height: 20px;
-  text-align: right;
-  white-space: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   opacity: 0;
   transition:
     opacity 0.1s,
