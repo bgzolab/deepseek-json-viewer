@@ -140,14 +140,19 @@ async function loadLater(): Promise<void> {
     windowEnd.value + LOAD_CHUNK,
   )
   await nextTick()
+  updateAtBottom()
   updateActiveNav()
 }
 
-function onScroll(): void {
+function updateAtBottom(): void {
   const element = scrollEl.value
   if (!element) return
   atBottom.value =
     element.scrollHeight - element.scrollTop - element.clientHeight < BOTTOM_THRESHOLD
+}
+
+function onScroll(): void {
+  updateAtBottom()
 
   if (activeFrame) return
   activeFrame = window.requestAnimationFrame(() => {
@@ -240,8 +245,7 @@ watch(
       if (windowEnd.value === previousLength) windowEnd.value = length
       if (atBottom.value) await scrollToBottom('auto')
     } else if (length < previousLength) {
-      windowStart.value = Math.min(windowStart.value, length)
-      windowEnd.value = Math.min(windowEnd.value, length)
+      resetWindow()
     }
     updateActiveNav()
   },
