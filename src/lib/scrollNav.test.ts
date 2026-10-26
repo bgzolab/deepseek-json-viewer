@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatMessage } from '../types/chat'
-import { buildScrollNavItems } from './scrollNav'
+import { buildScrollNavItems, centeredScrollWindow } from './scrollNav'
 
 const messages: ChatMessage[] = [
   { id: 'u1', role: 'user', content: '  第一行\n第二行  ' },
@@ -24,5 +24,13 @@ describe('scroll nav helpers', () => {
       { id: 'long', role: 'user', content: 'a'.repeat(130) },
     ])
     expect(item.title).toBe(`${'a'.repeat(120)}…`)
+  })
+
+  it('centers a bounded window around a target message', () => {
+    expect(centeredScrollWindow(200, 0)).toEqual({ start: 0, end: 80 })
+    expect(centeredScrollWindow(200, 100)).toEqual({ start: 84, end: 164 })
+    expect(centeredScrollWindow(200, 199)).toEqual({ start: 120, end: 200 })
+    expect(centeredScrollWindow(50, 30)).toEqual({ start: 0, end: 50 })
+    expect(centeredScrollWindow(0, 0)).toEqual({ start: 0, end: 0 })
   })
 })

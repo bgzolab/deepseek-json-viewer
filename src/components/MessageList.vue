@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { StoredConversation } from '../types/chat'
 import { t } from '../lib/i18n'
-import { buildScrollNavItems } from '../lib/scrollNav'
+import { buildScrollNavItems, centeredScrollWindow } from '../lib/scrollNav'
 import AppIcon from './AppIcon.vue'
 import MessageItem from './MessageItem.vue'
 import ScrollNav from './ScrollNav.vue'
@@ -16,6 +16,8 @@ const props = defineProps<{
 const INITIAL_WINDOW = 80
 const LOAD_CHUNK = 80
 const BOTTOM_THRESHOLD = 96
+// 60px header + 12px reading line, matching --header-height in tokens.css.
+const ACTIVE_MESSAGE_OFFSET = 72
 
 const scrollEl = ref<HTMLElement | null>(null)
 const windowStart = ref(0)
@@ -56,15 +58,18 @@ function updateActiveNav(): void {
     return
   }
 
-  const threshold = element.getBoundingClientRect().top + 72
+  const threshold = element.getBoundingClientRect().top + ACTIVE_MESSAGE_OFFSET
   let activeId = ''
 
   for (const messageElement of element.querySelectorAll<HTMLElement>('[data-message-index]')) {
     const itemId = navItemByIndex.value.get(Number(messageElement.dataset.messageIndex))
     if (!itemId) continue
-    activeId ||= itemId
     if (messageElement.getBoundingClientRect().top > threshold) break
     activeId = itemId
+  }
+
+  if (!activeId && atBottom.value) {
+    activeId = navItems.value[navItems.value.length - 1]?.id ?? ''
   }
 
   activeNavId.value = activeId
@@ -77,11 +82,13 @@ function resetWindow(): void {
 
 async function ensureMessageWindow(index: number): Promise<void> {
   if (index >= windowStart.value && index < windowEnd.value) return
-  windowStart.value = Math.max(0, index - 16)
-  windowEnd.value = Math.min(
+  const window = centeredScrollWindow(
     props.conversation.messages.length,
-    windowStart.value + INITIAL_WINDOW,
+    index,
+    INITIAL_WINDOW,
   )
+  windowStart.value = window.start
+  windowEnd.value = window.end
   await nextTick()
 }
 
@@ -92,6 +99,14 @@ async function scrollToBottom(behavior: ScrollBehavior = 'smooth'): Promise<void
   element.scrollTo({ top: element.scrollHeight, behavior })
   atBottom.value = true
   updateActiveNav()
+}
+
+async function scrollToLatest(): Promise<void> {
+  if (laterCount.value > 0) {
+    resetWindow()
+    await nextTick()
+  }
+  await scrollToBottom()
 }
 
 async function loadEarlier(): Promise<void> {
@@ -292,7 +307,7 @@ defineExpose({ scrollToBottom, focusMatch })
         class="scroll-bottom"
         :aria-label="t('messages.scrollBottom')"
         :title="t('messages.scrollBottom')"
-        @click="scrollToBottom()"
+        @click="scrollToLatest()"
       >
         <AppIcon name="arrow-down" :size="16" />
       </button>

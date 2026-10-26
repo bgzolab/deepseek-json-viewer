@@ -6,6 +6,23 @@ export interface ScrollNavItem {
   title: string
 }
 
+export interface ScrollWindow {
+  start: number
+  end: number
+}
+
+export const SCROLL_WINDOW_SIZE = 80
+
+export function centeredScrollWindow(
+  length: number,
+  index: number,
+  size = SCROLL_WINDOW_SIZE,
+  before = 16,
+): ScrollWindow {
+  const start = Math.max(0, Math.min(index - before, length - size))
+  return { start, end: Math.min(length, start + size) }
+}
+
 const MAX_TITLE_LENGTH = 120
 
 function messageTitle(message: ChatMessage): string {
