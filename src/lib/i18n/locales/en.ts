@@ -83,6 +83,8 @@ export const en = {
   'header.titleMatch': 'Title match',
   'header.exitSearch': 'Exit search',
 
+  'nav.aria': 'Conversation navigation',
+
   'empty.welcome': 'Hello, welcome back',
   'empty.lead': 'Import your exported DeepSeek chats and keep reading them locally.',
   'empty.dropTitle': 'Drop JSON files here',
@@ -113,6 +115,10 @@ export const en = {
   'messages.loadEarlier': {
     one: 'Load {count} earlier message',
     other: 'Load {count} earlier messages',
+  },
+  'messages.loadLater': {
+    one: 'Load {count} later message',
+    other: 'Load {count} later messages',
   },
   'messages.scrollBottom': 'Scroll to bottom',
 

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { StoredConversation } from '../types/chat'
 import { t } from '../lib/i18n'
+import { buildScrollNavItems, centeredScrollWindow, SCROLL_WINDOW_SIZE } from '../lib/scrollNav'
 import AppIcon from './AppIcon.vue'
 import MessageItem from './MessageItem.vue'
+import ScrollNav from './ScrollNav.vue'
 
 const props = defineProps<{
   conversation: StoredConversation
@@ -11,32 +13,113 @@ const props = defineProps<{
   messageMatchOffsets: Map<string, number>
 }>()
 
-const INITIAL_WINDOW = 80
-const LOAD_CHUNK = 80
+const INITIAL_WINDOW = SCROLL_WINDOW_SIZE
+const LOAD_CHUNK = SCROLL_WINDOW_SIZE
 const BOTTOM_THRESHOLD = 96
+// 60px header + 12px reading line, matching --header-height in tokens.css.
+const ACTIVE_MESSAGE_OFFSET = 72
 
 const scrollEl = ref<HTMLElement | null>(null)
-const windowStart = ref(0)
+const windowStart = ref(Math.max(0, props.conversation.messages.length - INITIAL_WINDOW))
+const windowEnd = ref(props.conversation.messages.length)
 const atBottom = ref(true)
 
 const indexedMessages = computed(() =>
   props.conversation.messages.map((message, index) => ({ message, index })),
 )
 
-const visibleMessages = computed(() => indexedMessages.value.slice(windowStart.value))
+const visibleMessages = computed(() =>
+  indexedMessages.value.slice(windowStart.value, windowEnd.value),
+)
 const hiddenCount = computed(() => windowStart.value)
+const laterCount = computed(() =>
+  Math.max(0, props.conversation.messages.length - windowEnd.value),
+)
 const isEmpty = computed(() => props.conversation.messages.length === 0)
+const navItems = computed(() => buildScrollNavItems(props.conversation.messages))
+const navItemByIndex = computed(
+  () => new Map(navItems.value.map((item) => [item.index, item.id])),
+)
+const activeNavId = ref('')
+const navMediaQuery = window.matchMedia('(min-width: 768px)')
+const navHoverQuery = window.matchMedia('(hover: hover)')
+
+let activeFrame = 0
+
+function updateActiveNav(): void {
+  const element = scrollEl.value
+  if (
+    !element ||
+    !navMediaQuery.matches ||
+    !navHoverQuery.matches ||
+    navItems.value.length < 2
+  ) {
+    activeNavId.value = ''
+    return
+  }
+
+  const threshold = element.getBoundingClientRect().top + ACTIVE_MESSAGE_OFFSET
+  let activeId = ''
+
+  for (const messageElement of element.querySelectorAll<HTMLElement>('[data-message-index]')) {
+    const itemId = navItemByIndex.value.get(Number(messageElement.dataset.messageIndex))
+    if (!itemId) continue
+    if (messageElement.getBoundingClientRect().top > threshold) break
+    activeId = itemId
+  }
+
+  if (!activeId && atBottom.value) {
+    for (let index = navItems.value.length - 1; index >= 0; index -= 1) {
+      const item = navItems.value[index]
+      if (item.index >= windowStart.value && item.index < windowEnd.value) {
+        activeId = item.id
+        break
+      }
+    }
+  }
+
+  activeNavId.value = activeId
+}
 
 function resetWindow(): void {
   windowStart.value = Math.max(0, props.conversation.messages.length - INITIAL_WINDOW)
+  windowEnd.value = props.conversation.messages.length
+}
+
+async function ensureMessageWindow(index: number): Promise<void> {
+  if (index >= windowStart.value && index < windowEnd.value) return
+  const nextWindow = centeredScrollWindow(
+    props.conversation.messages.length,
+    index,
+    INITIAL_WINDOW,
+  )
+  windowStart.value = nextWindow.start
+  windowEnd.value = nextWindow.end
+  await nextTick()
+}
+
+function scrollBehavior(behavior: ScrollBehavior): ScrollBehavior {
+  return behavior === 'smooth' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ? 'auto'
+    : behavior
 }
 
 async function scrollToBottom(behavior: ScrollBehavior = 'smooth'): Promise<void> {
   await nextTick()
   const element = scrollEl.value
   if (!element) return
-  element.scrollTo({ top: element.scrollHeight, behavior })
+  element.scrollTo({ top: element.scrollHeight, behavior: scrollBehavior(behavior) })
   atBottom.value = true
+  updateActiveNav()
+}
+
+async function scrollToLatest(): Promise<void> {
+  if (laterCount.value > 0) {
+    resetWindow()
+    await nextTick()
+  }
+  await scrollToBottom()
 }
 
 async function loadEarlier(): Promise<void> {
@@ -48,13 +131,48 @@ async function loadEarlier(): Promise<void> {
   windowStart.value = Math.max(0, windowStart.value - LOAD_CHUNK)
   await nextTick()
   element.scrollTop = element.scrollHeight - previousHeight + previousTop
+  updateActiveNav()
 }
 
-function onScroll(): void {
+async function loadLater(): Promise<void> {
+  windowEnd.value = Math.min(
+    props.conversation.messages.length,
+    windowEnd.value + LOAD_CHUNK,
+  )
+  await nextTick()
+  updateAtBottom()
+  updateActiveNav()
+}
+
+function updateAtBottom(): void {
   const element = scrollEl.value
   if (!element) return
   atBottom.value =
     element.scrollHeight - element.scrollTop - element.clientHeight < BOTTOM_THRESHOLD
+}
+
+function onScroll(): void {
+  updateAtBottom()
+
+  if (activeFrame) return
+  activeFrame = window.requestAnimationFrame(() => {
+    activeFrame = 0
+    updateActiveNav()
+  })
+}
+
+async function jumpToMessage(index: number): Promise<void> {
+  const element = scrollEl.value
+  if (!element) return
+
+  await ensureMessageWindow(index)
+
+  const target = element.querySelector<HTMLElement>(`[data-message-index="${index}"]`)
+  if (!target) return
+
+  const targetTop =
+    target.getBoundingClientRect().top - element.getBoundingClientRect().top + element.scrollTop
+  element.scrollTo({ top: Math.max(0, targetTop - 12), behavior: scrollBehavior('smooth') })
 }
 
 function centerElementInScrollContainer(container: HTMLElement, target: HTMLElement): void {
@@ -74,8 +192,8 @@ async function focusMatch(matchIndex: number, messageId: string): Promise<void> 
     (message) => message.id === messageId,
   )
 
-  if (messageIndex >= 0 && messageIndex < windowStart.value) {
-    windowStart.value = Math.max(0, messageIndex - 16)
+  if (messageIndex >= 0) {
+    await ensureMessageWindow(messageIndex)
   }
 
   await nextTick()
@@ -116,17 +234,27 @@ watch(
     } else {
       await scrollToBottom('auto')
     }
+    updateActiveNav()
   },
 )
 
 watch(
   () => props.conversation.messages.length,
   async (length, previousLength) => {
-    if (length > previousLength && atBottom.value) {
-      await scrollToBottom('auto')
+    if (length > previousLength) {
+      if (windowEnd.value === previousLength) windowEnd.value = length
+      if (atBottom.value) await scrollToBottom('auto')
+    } else if (length < previousLength) {
+      resetWindow()
     }
+    updateActiveNav()
   },
 )
+
+watch(navItems, async () => {
+  await nextTick()
+  updateActiveNav()
+})
 
 onMounted(async () => {
   resetWindow()
@@ -135,6 +263,15 @@ onMounted(async () => {
   } else {
     await scrollToBottom('auto')
   }
+  updateActiveNav()
+  navMediaQuery.addEventListener('change', updateActiveNav)
+  navHoverQuery.addEventListener('change', updateActiveNav)
+})
+
+onBeforeUnmount(() => {
+  navMediaQuery.removeEventListener('change', updateActiveNav)
+  navHoverQuery.removeEventListener('change', updateActiveNav)
+  if (activeFrame) window.cancelAnimationFrame(activeFrame)
 })
 
 defineExpose({ scrollToBottom, focusMatch })
@@ -167,6 +304,15 @@ defineExpose({ scrollToBottom, focusMatch })
             :query="query"
             :search-start-index="messageOffset(item.message.id)"
           />
+
+          <button
+            v-if="laterCount > 0"
+            type="button"
+            class="load-later"
+            @click="loadLater"
+          >
+            {{ t('messages.loadLater', { count: Math.min(laterCount, LOAD_CHUNK) }) }}
+          </button>
         </template>
       </div>
     </div>
@@ -178,11 +324,13 @@ defineExpose({ scrollToBottom, focusMatch })
         class="scroll-bottom"
         :aria-label="t('messages.scrollBottom')"
         :title="t('messages.scrollBottom')"
-        @click="scrollToBottom()"
+        @click="scrollToLatest()"
       >
         <AppIcon name="arrow-down" :size="16" />
       </button>
     </Transition>
+
+    <ScrollNav :items="navItems" :active-id="activeNavId" @select="jumpToMessage" />
   </div>
 </template>
 
@@ -212,9 +360,9 @@ defineExpose({ scrollToBottom, focusMatch })
   padding: 34px var(--content-gutter) 28px;
 }
 
-.load-earlier {
+.load-earlier,
+.load-later {
   display: block;
-  margin: 0 auto 24px;
   padding: 4px 8px;
   border-radius: 6px;
   color: var(--text-tertiary);
@@ -225,7 +373,16 @@ defineExpose({ scrollToBottom, focusMatch })
     color var(--transition-fast);
 }
 
-.load-earlier:hover {
+.load-earlier {
+  margin: 0 auto 24px;
+}
+
+.load-later {
+  margin: 24px auto 0;
+}
+
+.load-earlier:hover,
+.load-later:hover {
   background: var(--bg-hover);
   color: var(--text-secondary);
 }
@@ -300,6 +457,12 @@ defineExpose({ scrollToBottom, focusMatch })
 @media (max-width: 640px) {
   .message-stream {
     padding: 20px 14px 22px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1140px) {
+  .message-stream {
+    padding-right: 64px;
   }
 }
 </style>
