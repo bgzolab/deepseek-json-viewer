@@ -17,17 +17,9 @@ const listEl = ref<HTMLElement | null>(null)
 watch(
   () => props.activeId,
   () => {
-    const list = listEl.value
-    const active = list?.querySelector<HTMLElement>('.scroll-nav-item.is-active')
-    if (!list || !active) return
-
-    const listRect = list.getBoundingClientRect()
-    const activeRect = active.getBoundingClientRect()
-    if (activeRect.top < listRect.top + 15) {
-      list.scrollTop += activeRect.top - listRect.top - 15
-    } else if (activeRect.bottom > listRect.bottom - 15) {
-      list.scrollTop += activeRect.bottom - listRect.bottom + 15
-    }
+    listEl.value
+      ?.querySelector<HTMLElement>('.scroll-nav-item.is-active')
+      ?.scrollIntoView({ block: 'nearest' })
   },
   { flush: 'post' },
 )
@@ -152,6 +144,7 @@ function itemTitle(item: ScrollNavItem): string {
   color: var(--text-tertiary);
   line-height: 20px;
   cursor: pointer;
+  scroll-margin-block: 15px;
 }
 
 .scroll-nav-title {

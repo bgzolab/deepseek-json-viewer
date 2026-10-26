@@ -18,4 +18,11 @@ describe('scroll nav helpers', () => {
       { id: 'u3', index: 4, title: '' },
     ])
   })
+
+  it('caps very long titles', () => {
+    const [item] = buildScrollNavItems([
+      { id: 'long', role: 'user', content: 'a'.repeat(130) },
+    ])
+    expect(item.title).toBe(`${'a'.repeat(120)}…`)
+  })
 })

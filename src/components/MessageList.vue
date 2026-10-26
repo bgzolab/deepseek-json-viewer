@@ -29,23 +29,26 @@ const visibleMessages = computed(() => indexedMessages.value.slice(windowStart.v
 const hiddenCount = computed(() => windowStart.value)
 const isEmpty = computed(() => props.conversation.messages.length === 0)
 const navItems = computed(() => buildScrollNavItems(props.conversation.messages))
+const navItemByIndex = computed(
+  () => new Map(navItems.value.map((item) => [item.index, item.id])),
+)
 const activeNavId = ref('')
+const navMediaQuery = window.matchMedia('(min-width: 768px)')
 
 let activeFrame = 0
 
 function updateActiveNav(): void {
   const element = scrollEl.value
-  if (!element || navItems.value.length === 0) {
+  if (!element || !navMediaQuery.matches || navItems.value.length < 2) {
     activeNavId.value = ''
     return
   }
 
-  const itemByIndex = new Map(navItems.value.map((item) => [item.index, item.id]))
   const threshold = element.getBoundingClientRect().top + 72
   let activeId = ''
 
   for (const messageElement of element.querySelectorAll<HTMLElement>('[data-message-index]')) {
-    const itemId = itemByIndex.get(Number(messageElement.dataset.messageIndex))
+    const itemId = navItemByIndex.value.get(Number(messageElement.dataset.messageIndex))
     if (!itemId) continue
     activeId ||= itemId
     if (messageElement.getBoundingClientRect().top > threshold) break
@@ -182,6 +185,11 @@ watch(
     updateActiveNav()
   },
 )
+
+watch(navItems, async () => {
+  await nextTick()
+  updateActiveNav()
+})
 
 onMounted(async () => {
   resetWindow()
