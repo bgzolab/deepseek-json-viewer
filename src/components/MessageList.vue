@@ -69,7 +69,13 @@ function updateActiveNav(): void {
   }
 
   if (!activeId && atBottom.value) {
-    activeId = navItems.value[navItems.value.length - 1]?.id ?? ''
+    for (let index = navItems.value.length - 1; index >= 0; index -= 1) {
+      const item = navItems.value[index]
+      if (item.index >= windowStart.value && item.index < windowEnd.value) {
+        activeId = item.id
+        break
+      }
+    }
   }
 
   activeNavId.value = activeId
