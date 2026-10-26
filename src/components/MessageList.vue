@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { StoredConversation } from '../types/chat'
 import { t } from '../lib/i18n'
-import { buildScrollNavItems, centeredScrollWindow } from '../lib/scrollNav'
+import { buildScrollNavItems, centeredScrollWindow, SCROLL_WINDOW_SIZE } from '../lib/scrollNav'
 import AppIcon from './AppIcon.vue'
 import MessageItem from './MessageItem.vue'
 import ScrollNav from './ScrollNav.vue'
@@ -13,8 +13,8 @@ const props = defineProps<{
   messageMatchOffsets: Map<string, number>
 }>()
 
-const INITIAL_WINDOW = 80
-const LOAD_CHUNK = 80
+const INITIAL_WINDOW = SCROLL_WINDOW_SIZE
+const LOAD_CHUNK = SCROLL_WINDOW_SIZE
 const BOTTOM_THRESHOLD = 96
 // 60px header + 12px reading line, matching --header-height in tokens.css.
 const ACTIVE_MESSAGE_OFFSET = 72

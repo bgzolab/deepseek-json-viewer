@@ -27,6 +27,30 @@ watch(
 function itemTitle(item: ScrollNavItem): string {
   return item.title || t('message.empty')
 }
+
+function focusableId(item: ScrollNavItem): string {
+  return props.activeId || props.items[0]?.id || item.id
+}
+
+function onItemKeydown(event: KeyboardEvent): void {
+  const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End']
+  if (!keys.includes(event.key)) return
+
+  const buttons = Array.from(
+    listEl.value?.querySelectorAll<HTMLButtonElement>('.scroll-nav-item') ?? [],
+  )
+  const current = buttons.indexOf(event.currentTarget as HTMLButtonElement)
+  if (current < 0) return
+
+  let next = current
+  if (event.key === 'ArrowDown') next = Math.min(buttons.length - 1, current + 1)
+  else if (event.key === 'ArrowUp') next = Math.max(0, current - 1)
+  else if (event.key === 'Home') next = 0
+  else next = buttons.length - 1
+
+  event.preventDefault()
+  buttons[next]?.focus()
+}
 </script>
 
 <template>
@@ -45,8 +69,10 @@ function itemTitle(item: ScrollNavItem): string {
           class="scroll-nav-item"
           :class="{ 'is-active': item.id === activeId }"
           :aria-current="item.id === activeId ? 'location' : undefined"
+          :tabindex="item.id === focusableId(item) ? 0 : -1"
           :title="itemTitle(item)"
           @click="emit('select', item.index)"
+          @keydown="onItemKeydown"
         >
           <span class="scroll-nav-title">{{ itemTitle(item) }}</span>
           <span class="scroll-nav-indicator" aria-hidden="true">
