@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatMessage } from '../types/chat'
-import { buildScrollNavItems, centeredScrollWindow } from './scrollNav'
+import { buildScrollNavItems, centeredScrollWindow, nextScrollNavIndex } from './scrollNav'
 
 const messages: ChatMessage[] = [
   { id: 'u1', role: 'user', content: '  第一行\n第二行  ' },
@@ -32,5 +32,15 @@ describe('scroll nav helpers', () => {
     expect(centeredScrollWindow(200, 199)).toEqual({ start: 120, end: 200 })
     expect(centeredScrollWindow(50, 30)).toEqual({ start: 0, end: 50 })
     expect(centeredScrollWindow(0, 0)).toEqual({ start: 0, end: 0 })
+  })
+
+  it('moves keyboard focus within the nav bounds', () => {
+    expect(nextScrollNavIndex(10, 0, 'ArrowUp')).toBe(0)
+    expect(nextScrollNavIndex(10, 9, 'ArrowDown')).toBe(9)
+    expect(nextScrollNavIndex(10, 5, 'ArrowDown')).toBe(6)
+    expect(nextScrollNavIndex(10, 5, 'ArrowUp')).toBe(4)
+    expect(nextScrollNavIndex(10, 5, 'Home')).toBe(0)
+    expect(nextScrollNavIndex(10, 5, 'End')).toBe(9)
+    expect(nextScrollNavIndex(0, 0, 'ArrowDown')).toBe(-1)
   })
 })

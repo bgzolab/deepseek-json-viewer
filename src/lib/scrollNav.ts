@@ -23,6 +23,15 @@ export function centeredScrollWindow(
   return { start, end: Math.min(length, start + size) }
 }
 
+export function nextScrollNavIndex(length: number, current: number, key: string): number {
+  if (length <= 0) return -1
+  if (key === 'Home') return 0
+  if (key === 'End') return length - 1
+  if (key === 'ArrowDown') return Math.min(length - 1, current + 1)
+  if (key === 'ArrowUp') return Math.max(0, current - 1)
+  return current
+}
+
 const MAX_TITLE_LENGTH = 120
 
 function messageTitle(message: ChatMessage): string {

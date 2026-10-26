@@ -20,7 +20,7 @@ const BOTTOM_THRESHOLD = 96
 const ACTIVE_MESSAGE_OFFSET = 72
 
 const scrollEl = ref<HTMLElement | null>(null)
-const windowStart = ref(0)
+const windowStart = ref(Math.max(0, props.conversation.messages.length - INITIAL_WINDOW))
 const windowEnd = ref(props.conversation.messages.length)
 const atBottom = ref(true)
 

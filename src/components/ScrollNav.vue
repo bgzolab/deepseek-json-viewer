@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { t } from '../lib/i18n'
-import type { ScrollNavItem } from '../lib/scrollNav'
+import { nextScrollNavIndex, type ScrollNavItem } from '../lib/scrollNav'
 
 const props = defineProps<{
   items: ScrollNavItem[]
@@ -13,6 +13,14 @@ const emit = defineEmits<{
 }>()
 
 const listEl = ref<HTMLElement | null>(null)
+const focusedId = ref('')
+
+const focusableId = computed(() => {
+  const candidate = focusedId.value || props.activeId
+  return props.items.some((item) => item.id === candidate)
+    ? candidate
+    : props.items[0]?.id ?? ''
+})
 
 watch(
   () => props.activeId,
@@ -28,10 +36,6 @@ function itemTitle(item: ScrollNavItem): string {
   return item.title || t('message.empty')
 }
 
-function focusableId(item: ScrollNavItem): string {
-  return props.activeId || props.items[0]?.id || item.id
-}
-
 function onItemKeydown(event: KeyboardEvent): void {
   const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End']
   if (!keys.includes(event.key)) return
@@ -42,14 +46,8 @@ function onItemKeydown(event: KeyboardEvent): void {
   const current = buttons.indexOf(event.currentTarget as HTMLButtonElement)
   if (current < 0) return
 
-  let next = current
-  if (event.key === 'ArrowDown') next = Math.min(buttons.length - 1, current + 1)
-  else if (event.key === 'ArrowUp') next = Math.max(0, current - 1)
-  else if (event.key === 'Home') next = 0
-  else next = buttons.length - 1
-
   event.preventDefault()
-  buttons[next]?.focus()
+  buttons[nextScrollNavIndex(buttons.length, current, event.key)]?.focus()
 }
 </script>
 
@@ -69,8 +67,9 @@ function onItemKeydown(event: KeyboardEvent): void {
           class="scroll-nav-item"
           :class="{ 'is-active': item.id === activeId }"
           :aria-current="item.id === activeId ? 'location' : undefined"
-          :tabindex="item.id === focusableId(item) ? 0 : -1"
+          :tabindex="item.id === focusableId ? 0 : -1"
           :title="itemTitle(item)"
+          @focus="focusedId = item.id"
           @click="emit('select', item.index)"
           @keydown="onItemKeydown"
         >
