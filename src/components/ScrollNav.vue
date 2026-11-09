@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { t } from '../lib/i18n'
 import { nextScrollNavIndex, type ScrollNavItem } from '../lib/scrollNav'
 
@@ -20,6 +20,9 @@ const listEl = ref<HTMLElement | null>(null)
 const navEl = ref<HTMLElement | null>(null)
 const focusedId = ref('')
 const pointerNear = ref(false)
+const visibleQuery = window.matchMedia('(min-width: 768px)')
+const hoverQuery = window.matchMedia('(hover: hover)')
+let navRect: DOMRect | null = null
 
 const focusableId = computed(() => {
   const candidate = focusedId.value || props.activeId
@@ -62,32 +65,52 @@ function onListFocusout(event: FocusEvent): void {
   }
 }
 
-function updatePointerNear(event: PointerEvent): void {
+function measureNavRect(): void {
   const rect = navEl.value?.getBoundingClientRect()
-  if (!rect) return
+  navRect =
+    visibleQuery.matches &&
+    hoverQuery.matches &&
+    rect &&
+    rect.width > 0 &&
+    rect.height > 0
+      ? rect
+      : null
 
-  pointerNear.value =
-    event.clientX >= rect.left - HOVER_MARGIN_X &&
-    event.clientX <= rect.right + HOVER_MARGIN_X &&
-    event.clientY >= rect.top - HOVER_MARGIN_Y &&
-    event.clientY <= rect.bottom + HOVER_MARGIN_Y
+  if (!navRect) pointerNear.value = false
 }
 
-function resetPointerNear(): void {
-  pointerNear.value = false
+function updatePointerNear(event: PointerEvent): void {
+  if (!navRect) return
+
+  pointerNear.value =
+    event.clientX >= navRect.left - HOVER_MARGIN_X &&
+    event.clientX <= navRect.right + HOVER_MARGIN_X &&
+    event.clientY >= navRect.top - HOVER_MARGIN_Y &&
+    event.clientY <= navRect.bottom + HOVER_MARGIN_Y
 }
 
 onMounted(() => {
+  measureNavRect()
   window.addEventListener('pointermove', updatePointerNear, { passive: true })
-  window.addEventListener('blur', resetPointerNear)
-  document.documentElement.addEventListener('pointerleave', resetPointerNear)
+  window.addEventListener('resize', measureNavRect)
+  visibleQuery.addEventListener('change', measureNavRect)
+  hoverQuery.addEventListener('change', measureNavRect)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('pointermove', updatePointerNear)
-  window.removeEventListener('blur', resetPointerNear)
-  document.documentElement.removeEventListener('pointerleave', resetPointerNear)
+  window.removeEventListener('resize', measureNavRect)
+  visibleQuery.removeEventListener('change', measureNavRect)
+  hoverQuery.removeEventListener('change', measureNavRect)
 })
+
+watch(
+  () => props.items.length,
+  async () => {
+    await nextTick()
+    measureNavRect()
+  },
+)
 </script>
 
 <template>

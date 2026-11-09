@@ -115,10 +115,7 @@ async function scrollToBottom(behavior: ScrollBehavior = 'smooth'): Promise<void
 }
 
 async function scrollToLatest(): Promise<void> {
-  if (laterCount.value > 0) {
-    resetWindow()
-    await nextTick()
-  }
+  await ensureMessageWindow(props.conversation.messages.length - 1)
   await scrollToBottom()
 }
 
