@@ -89,17 +89,25 @@ function updatePointerNear(event: PointerEvent): void {
     event.clientY <= navRect.bottom + HOVER_MARGIN_Y
 }
 
+function resetPointerNear(): void {
+  pointerNear.value = false
+}
+
 onMounted(() => {
   measureNavRect()
   window.addEventListener('pointermove', updatePointerNear, { passive: true })
+  window.addEventListener('blur', resetPointerNear)
   window.addEventListener('resize', measureNavRect)
+  document.documentElement.addEventListener('pointerleave', resetPointerNear)
   visibleQuery.addEventListener('change', measureNavRect)
   hoverQuery.addEventListener('change', measureNavRect)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('pointermove', updatePointerNear)
+  window.removeEventListener('blur', resetPointerNear)
   window.removeEventListener('resize', measureNavRect)
+  document.documentElement.removeEventListener('pointerleave', resetPointerNear)
   visibleQuery.removeEventListener('change', measureNavRect)
   hoverQuery.removeEventListener('change', measureNavRect)
 })
