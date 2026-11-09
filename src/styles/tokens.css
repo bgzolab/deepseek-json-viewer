@@ -59,6 +59,9 @@
 
   --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.08);
 
+  --scroll-nav-bg: rgba(255, 255, 255, 0.8);
+  --scroll-nav-panel: #ffffff;
+
   --sidebar-width: 260px;
   --header-height: 60px;
   --content-width: 752px;
@@ -122,4 +125,7 @@
   --scrollbar-thumb-hover: #545557;
 
   --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  --scroll-nav-bg: rgba(21, 21, 23, 0.6);
+  --scroll-nav-panel: #232324;
 }

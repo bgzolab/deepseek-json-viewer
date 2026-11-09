@@ -76,6 +76,8 @@ export const zhCN = {
   'header.titleMatch': '标题匹配',
   'header.exitSearch': '退出搜索',
 
+  'nav.aria': '对话导航',
+
   'empty.welcome': '你好，欢迎回来',
   'empty.lead': '导入 DeepSeek 导出的聊天记录，在本地继续阅读你的对话。',
   'empty.dropTitle': '拖拽 JSON 文件到这里',
@@ -103,6 +105,7 @@ export const zhCN = {
   'messages.emptyTitle': '这个会话没有可展示的消息',
   'messages.emptyBody': '可能是导出时消息为空，或该会话只包含暂不支持的内容。',
   'messages.loadEarlier': '加载更早的 {count} 条消息',
+  'messages.loadLater': '加载更晚的 {count} 条消息',
   'messages.scrollBottom': '滚动到底部',
 
   'markdown.copy': '复制',
