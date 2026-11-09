@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { t } from '../lib/i18n'
 import { nextScrollNavIndex, type ScrollNavItem } from '../lib/scrollNav'
+
+// Open the rail before the pointer reaches the 34px strip.
+const HOVER_MARGIN_X = 40
+const HOVER_MARGIN_Y = 48
 
 const props = defineProps<{
   items: ScrollNavItem[]
@@ -13,7 +17,9 @@ const emit = defineEmits<{
 }>()
 
 const listEl = ref<HTMLElement | null>(null)
+const navEl = ref<HTMLElement | null>(null)
 const focusedId = ref('')
+const pointerNear = ref(false)
 
 const focusableId = computed(() => {
   const candidate = focusedId.value || props.activeId
@@ -55,12 +61,41 @@ function onListFocusout(event: FocusEvent): void {
     focusedId.value = ''
   }
 }
+
+function updatePointerNear(event: PointerEvent): void {
+  const rect = navEl.value?.getBoundingClientRect()
+  if (!rect) return
+
+  pointerNear.value =
+    event.clientX >= rect.left - HOVER_MARGIN_X &&
+    event.clientX <= rect.right + HOVER_MARGIN_X &&
+    event.clientY >= rect.top - HOVER_MARGIN_Y &&
+    event.clientY <= rect.bottom + HOVER_MARGIN_Y
+}
+
+function resetPointerNear(): void {
+  pointerNear.value = false
+}
+
+onMounted(() => {
+  window.addEventListener('pointermove', updatePointerNear, { passive: true })
+  window.addEventListener('blur', resetPointerNear)
+  document.documentElement.addEventListener('pointerleave', resetPointerNear)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('pointermove', updatePointerNear)
+  window.removeEventListener('blur', resetPointerNear)
+  document.documentElement.removeEventListener('pointerleave', resetPointerNear)
+})
 </script>
 
 <template>
   <nav
     v-if="items.length > 1"
+    ref="navEl"
     class="scroll-nav"
+    :class="{ 'is-near': pointerNear }"
     :aria-label="t('nav.aria')"
   >
     <div class="scroll-nav-bg" aria-hidden="true" />
@@ -139,6 +174,7 @@ function onListFocusout(event: FocusEvent): void {
     box-shadow 0.2s;
 }
 
+.scroll-nav.is-near .scroll-nav-panel,
 .scroll-nav:hover .scroll-nav-panel,
 .scroll-nav:focus-within .scroll-nav-panel {
   border-color: var(--border);
@@ -192,6 +228,7 @@ function onListFocusout(event: FocusEvent): void {
     color 0.2s;
 }
 
+.scroll-nav.is-near .scroll-nav-title,
 .scroll-nav:hover .scroll-nav-title,
 .scroll-nav:focus-within .scroll-nav-title {
   opacity: 1;
